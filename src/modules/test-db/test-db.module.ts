@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '../../database/database.module';
 import { TestDbController } from './test-db.controller';
 import { TestDbService } from './test-db.service';
 
@@ -9,7 +8,6 @@ import { TestDbService } from './test-db.service';
  * Expone el endpoint GET /api/test-db
  */
 @Module({
-  imports: [DatabaseModule],
   controllers: [TestDbController],
   providers: [TestDbService],
 })

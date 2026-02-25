@@ -3,23 +3,22 @@ import {
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { PrismaService } from '../../prisma/prisma.service';
 
 /**
  * TestDbService
- * Realiza una consulta simple (SELECT 1) para verificar la conexión a MySQL.
+ * Realiza una consulta simple (SELECT 1) para verificar la conexión a MySQL vía Prisma.
  */
 @Injectable()
 export class TestDbService {
   private readonly logger = new Logger(TestDbService.name);
 
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async checkConnection(): Promise<{ status: string; message: string }> {
     try {
       // Consulta mínima para verificar la conexión
-      await this.dataSource.query('SELECT 1');
+      await this.prisma.$queryRawUnsafe('SELECT 1');
       this.logger.log('✅ Database connection verified via test endpoint');
       return {
         status: 'ok',
