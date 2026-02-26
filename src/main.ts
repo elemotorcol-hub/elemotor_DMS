@@ -23,9 +23,9 @@ async function bootstrap() {
   // ─── Validación global de DTOs ───────────────────────────────────────────────
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,           // Elimina campos no declarados en el DTO
+      whitelist: true, // Elimina campos no declarados en el DTO
       forbidNonWhitelisted: true, // Lanza error si llegan campos extra
-      transform: true,           // Convierte automáticamente tipos primitivos
+      transform: true, // Convierte automáticamente tipos primitivos
     }),
   );
 
@@ -59,7 +59,9 @@ async function bootstrap() {
   logger.log(`📡 API Base:            http://localhost:${port}/api`);
   logger.log(`📋 Swagger docs:        http://localhost:${port}/api/docs`);
   logger.log(`❤️  Health check:        http://localhost:${port}/api/health`);
-  logger.log(`🌍 Environment:         ${process.env.NODE_ENV ?? 'development'}`);
+  logger.log(
+    `🌍 Environment:         ${process.env.NODE_ENV ?? 'development'}`,
+  );
 }
 
 bootstrap().catch((err) => {
