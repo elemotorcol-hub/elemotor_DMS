@@ -105,15 +105,25 @@ DATABASE_URL="mysql://root:tu_contraseña@localhost:3307/db_elemotor"
 
 ## 🗃️ Base de Datos y Prisma
 
-Asegúrese de que el contenedor Docker esté activo antes de iniciar la aplicación. El sistema utiliza **Prisma ORM** como herramienta de persistencia.
+El sistema utiliza **Prisma ORM** como herramienta de persistencia. Asegúrese de que el contenedor Docker de MySQL esté activo.
 
-Para sincronizar o hacer push del esquema `schema.prisma` a la base de datos en desarrollo:
+### 1. Migraciones (Crear tablas)
+
+Para aplicar el schema a la base de datos (creando todas las tablas e índices), ejecutar:
 
 ```bash
-npx prisma db push
+npx prisma migrate dev
 ```
 
-> También puedes usar `npx prisma studio` para abrir una interfaz gráfica en `localhost:5555` y explorar los datos de tu base de datos directamente.
+### 2. Seed (Poblar datos iniciales)
+
+Para insertar los datos base del catálogo (marcas, modelos, versiones, colores, usuarios admin, etc.), ejecutar:
+
+```bash
+npm run db:seed
+```
+
+> 💡 **Tip:** También puedes usar `npx prisma studio` para abrir una interfaz gráfica en `localhost:5555` y explorar/editar los datos directamente.
 
 ---
 
