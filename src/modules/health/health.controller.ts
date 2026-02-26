@@ -1,18 +1,32 @@
 import { Controller, Get } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 /**
  * HealthController
- * Endpoint raíz para verificar que el servidor está activo.
- * Ruta: GET /api
+ *
+ * Endpoint para verificar que el servicio está activo.
+ * Ruta: GET /api/health
  */
-@Controller()
+@ApiTags('health')
+@Controller('health')
 export class HealthController {
   @Get()
-  getHealth(): { status: string; app: string; version: string; timestamp: string } {
+  @ApiOperation({ summary: 'Health check del servicio' })
+  @ApiResponse({
+    status: 200,
+    description: 'Servicio operativo',
+    schema: {
+      example: {
+        status: 'ok',
+        service: 'elemotor_DMS',
+        timestamp: '2026-02-25T20:00:00.000Z',
+      },
+    },
+  })
+  getHealth(): { status: string; service: string; timestamp: string } {
     return {
       status: 'ok',
-      app: 'EleMotor API',
-      version: '1.0.0',
+      service: 'elemotor_DMS',
       timestamp: new Date().toISOString(),
     };
   }

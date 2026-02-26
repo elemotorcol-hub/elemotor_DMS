@@ -7,7 +7,7 @@
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![TypeORM](https://img.shields.io/badge/TypeORM-FE0902?style=for-the-badge&logo=typeorm&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![Estado](https://img.shields.io/badge/Estado-En%20Desarrollo-orange?style=for-the-badge)
 
 </div>
@@ -29,8 +29,9 @@
 | **NestJS**     | LTS     | Framework principal del servidor     |
 | **TypeScript** | Strict  | Tipado estático extremo a extremo    |
 | **MySQL**      | —       | Motor de base de datos relacional    |
-| **TypeORM**    | —       | ORM y gestión de esquema/migraciones |
+| **Prisma**     | v6      | ORM de próxima generación            |
 | **Node.js**    | LTS     | Entorno de ejecución                 |
+| **Docker**     | —       | Contenedor nativo para base de datos |
 
 ---
 
@@ -39,7 +40,7 @@
 Antes de iniciar, asegúrese de tener instalado en su entorno local:
 
 - **Node.js** — Versión LTS recomendada ([nodejs.org](https://nodejs.org))
-- **MySQL** — Servidor local o credenciales de servidor remoto
+- **Docker** — Para levantar la base de datos MySQL local
 - **Git** — Sistema de control de versiones ([git-scm.com](https://git-scm.com))
 - **Nest CLI** _(Opcional, recomendado)_ — `npm i -g @nestjs/cli`
 
@@ -60,52 +61,59 @@ cd elemotor_DMS
 npm install
 ```
 
-### 3. Configurar variables de entorno
+### 3. Configurar entorno y Base de Datos
 
 ```bash
 # Crear el archivo de entorno
 cp .env.example .env
+
+# Levantar contenedor de MySQL
+docker compose up -d
+
+# Generar cliente de Prisma
+npx prisma generate
 ```
 
-> Edite `.env` con los valores correspondientes a su entorno. Consulte la sección de [Variables de Entorno](#-configuración-de-base-de-datos-y-variables-de-entorno).
+> Edite `.env` con los valores correspondientes si difieren del ejemplo. Consulte la sección de [Variables de Entorno](#-configuración-de-base-de-datos-y-variables-de-entorno).
 
 ---
 
 ## 🔑 Configuración de Base de Datos y Variables de Entorno
 
-Crear el archivo `.env` en la raíz del proyecto con las siguientes variables:
+Crear el archivo `.env` en la raíz del proyecto con las siguientes variables básicas para inicializar:
 
 ```env
+PORT=4000
+NODE_ENV=development
+
 DB_HOST=localhost
-DB_PORT=3306
+DB_PORT=3307
 DB_USER=root
 DB_PASSWORD=tu_contraseña
 DB_NAME=db_elemotor
-PORT=3001
+
+DATABASE_URL="mysql://root:tu_contraseña@localhost:3307/db_elemotor"
 ```
 
-| Variable      | Descripción                    | Valor por defecto |
-| ------------- | ------------------------------ | ----------------- |
-| `DB_HOST`     | Host del servidor MySQL        | `localhost`       |
-| `DB_PORT`     | Puerto de MySQL                | `3306`            |
-| `DB_USER`     | Usuario de la base de datos    | `root`            |
-| `DB_PASSWORD` | Contraseña del usuario         | —                 |
-| `DB_NAME`     | Nombre de la base de datos     | `db_elemotor`     |
-| `PORT`        | Puerto de escucha del servidor | `3001`            |
+| Variable       | Descripción                           | Valor por defecto |
+| -------------- | ------------------------------------- | ----------------- |
+| `PORT`         | Puerto de escucha del servidor NestJS | `4000`            |
+| `DB_PORT`      | Puerto expuesto por Docker para MySQL | `3307`            |
+| `DATABASE_URL` | URL de conexión para Prisma ORM       | —                 |
 
 ---
 
-## 🗃️ Migraciones
+## 🗃️ Base de Datos y Prisma
 
-Asegúrese de que el servidor MySQL esté activo antes de iniciar la aplicación. El sistema utiliza **TypeORM** para la gestión del esquema de base de datos.
+Asegúrese de que el contenedor Docker esté activo antes de iniciar la aplicación. El sistema utiliza **Prisma ORM** como herramienta de persistencia.
 
-Para aplicar migraciones (si están configuradas):
+Para sincronizar o hacer push del esquema `schema.prisma` a la base de datos en desarrollo:
 
 ```bash
-npm run migration:run
+npx prisma db push
 ```
 
-> Si el entorno de desarrollo tiene activada la sincronización automática (`synchronize: true`), TypeORM reflejará los cambios de entidades directamente en la base de datos sin necesidad de ejecutar migraciones manualmente.
+> También puedes usar `npx prisma studio` para abrir una interfaz gráfica en `localhost:5555` y explorar los datos de tu base de datos directamente.
 
 ---
 
@@ -113,16 +121,16 @@ npm run migration:run
 
 ```
 elemotor_DMS/
+ ├── prisma/          # Schema de base de datos Prisma
  ├── src/
  │   ├── modules/     # Módulos de dominio (features)
- │   ├── controllers/ # Controladores REST
- │   ├── services/    # Lógica de negocio
- │   ├── entities/    # Entidades TypeORM
+ │   ├── config/      # Configuraciones de entorno
+ │   ├── common/      # Filtros, decoradores e interceptores
  │   └── main.ts      # Punto de entrada de la aplicación
  ├── test/            # Pruebas automatizadas (unitarias y e2e)
+ ├── docker-compose.yml # Definición de contenedores locales
  ├── .env             # Variables de entorno (no versionar)
- ├── nest-cli.json
- └── tsconfig.json
+ └── package.json
 ```
 
 ---
@@ -145,9 +153,10 @@ elemotor_DMS/
 npm run start:dev
 ```
 
-El servidor estará disponible en: **[http://localhost:3001](http://localhost:3001)**
+El servidor estará disponible en: **[http://localhost:4000/api](http://localhost:4000/api)**
 
-> La documentación de la API (Swagger) estará disponible en `http://localhost:3001/api` si está configurada en el proyecto.
+> **Swagger / Docs API:** La documentación autogenerada estará disponible en **[http://localhost:4000/api/docs](http://localhost:4000/api/docs)**
+> **Health Check:** Puedes verificar la salud del servicio ingresando a **[http://localhost:4000/api/health](http://localhost:4000/api/health)**
 
 ---
 
