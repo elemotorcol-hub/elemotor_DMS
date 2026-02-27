@@ -1,4 +1,5 @@
 import { PrismaClient, TrimStatus, ColorType, ImageType } from '@prisma/client';
+import { upsertTrim } from './utils/seeder.utils';
 
 export async function seedTrimsSpecsColorsImages(prisma: PrismaClient) {
   console.log('🏎️  Seeding Trims, Specs, Colors & Images...');
@@ -9,17 +10,12 @@ export async function seedTrimsSpecsColorsImages(prisma: PrismaClient) {
   const tiggoE = await prisma.model.findUniqueOrThrow({ where: { slug: 'chery-tiggo-7-pro-e-2025' } });
   const oraCat = await prisma.model.findUniqueOrThrow({ where: { slug: 'ora-good-cat-2025' } });
 
-  async function upsertTrim(modelId: number, name: string, data: Parameters<typeof prisma.trim.create>[0]['data']) {
-    const existing = await prisma.trim.findFirst({ where: { modelId, name } });
-    return existing ?? (await prisma.trim.create({ data }));
-  }
-
-  const sealUDynamic = await upsertTrim(sealU.id, 'Dynamic', { modelId: sealU.id, name: 'Dynamic', price: 148_900_000, availableQuantity: 3, status: TrimStatus.stock, active: true });
-  const sealUPremium = await upsertTrim(sealU.id, 'Premium', { modelId: sealU.id, name: 'Premium', price: 165_900_000, availableQuantity: 0, status: TrimStatus.transit, active: true });
-  const dolphinStd = await upsertTrim(dolphin.id, 'Standard Range', { modelId: dolphin.id, name: 'Standard Range', price: 99_900_000, availableQuantity: 5, status: TrimStatus.stock, active: true });
-  const oraCatPro = await upsertTrim(oraCat.id, 'Pro', { modelId: oraCat.id, name: 'Pro', price: 119_900_000, availableQuantity: 2, status: TrimStatus.stock, active: true });
-  await upsertTrim(atto3.id, 'Base', { modelId: atto3.id, name: 'Base', price: 129_900_000, availableQuantity: 0, status: TrimStatus.order, active: true });
-  await upsertTrim(tiggoE.id, 'Base', { modelId: tiggoE.id, name: 'Base', price: 139_900_000, availableQuantity: 0, status: TrimStatus.order, active: true });
+  const sealUDynamic = await upsertTrim(prisma, sealU.id, 'Dynamic', { modelId: sealU.id, name: 'Dynamic', price: 148_900_000, availableQuantity: 3, status: TrimStatus.stock, active: true });
+  const sealUPremium = await upsertTrim(prisma, sealU.id, 'Premium', { modelId: sealU.id, name: 'Premium', price: 165_900_000, availableQuantity: 0, status: TrimStatus.transit, active: true });
+  const dolphinStd = await upsertTrim(prisma, dolphin.id, 'Standard Range', { modelId: dolphin.id, name: 'Standard Range', price: 99_900_000, availableQuantity: 5, status: TrimStatus.stock, active: true });
+  const oraCatPro = await upsertTrim(prisma, oraCat.id, 'Pro', { modelId: oraCat.id, name: 'Pro', price: 119_900_000, availableQuantity: 2, status: TrimStatus.stock, active: true });
+  await upsertTrim(prisma, atto3.id, 'Base', { modelId: atto3.id, name: 'Base', price: 129_900_000, availableQuantity: 0, status: TrimStatus.order, active: true });
+  await upsertTrim(prisma, tiggoE.id, 'Base', { modelId: tiggoE.id, name: 'Base', price: 139_900_000, availableQuantity: 0, status: TrimStatus.order, active: true });
 
   await prisma.$transaction([
     // SPECS
