@@ -1,12 +1,12 @@
 import { PrismaClient, UserRole, OrderStatus, QuoteStatus, PreferredChannel } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { getAdminPasswordHash } from './utils/seeder.utils';
 
 export async function seedUsersAndOrders(prisma: PrismaClient) {
   console.log('👤  Seeding Users, Orders & Quotes...');
 
   // Users
-  const defaultAdminPass = process.env.ADMIN_SEED_PASSWORD || 'Admin2025!';
-  const adminPassword = await bcrypt.hash(defaultAdminPass, 10);
+  const adminPassword = await getAdminPasswordHash();
   
   
   const adminUser = await prisma.user.upsert({
