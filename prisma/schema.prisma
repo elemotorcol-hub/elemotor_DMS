@@ -249,24 +249,32 @@ model Model3d {
 // ============================================================
 
 model User {
-  id              Int       @id @default(autoincrement())
-  name            String    @db.VarChar(255)
-  email           String    @unique @db.VarChar(255)
-  phone           String?   @db.VarChar(50)
-  passwordHash    String?   @db.VarChar(255) @map("password_hash")
-  cedula          String?   @db.VarChar(50)
-  city            String?   @db.VarChar(100)
-  role            UserRole  @default(client)
-  googleId        String?   @db.VarChar(255) @map("google_id")
-  avatarUrl       String?   @db.VarChar(500) @map("avatar_url")
-  emailVerifiedAt DateTime? @map("email_verified_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id                   Int       @id @default(autoincrement())
+  name                 String    @db.VarChar(255)
+  email                String    @unique @db.VarChar(255)
+  phone                String?   @db.VarChar(50)
+  passwordHash         String?   @db.VarChar(255)  @map("password_hash")
+  cedula               String?   @db.VarChar(50)
+  city                 String?   @db.VarChar(100)
+  role                 UserRole  @default(client)
+  googleId             String?   @db.VarChar(255)  @map("google_id")
+  avatarUrl            String?   @db.VarChar(500)  @map("avatar_url")
+  emailVerifiedAt      DateTime? @map("email_verified_at")
 
-  orders              Order[]
+  // ── Auth tokens ──────────────────────────────────────────────
+  refreshToken         String?   @db.VarChar(500)  @map("refresh_token")
+  otpCode              String?   @db.VarChar(10)   @map("otp_code")
+  otpExpiresAt         DateTime? @map("otp_expires_at")
+  passwordResetToken   String?   @db.VarChar(255)  @map("password_reset_token")
+  passwordResetExpires DateTime? @map("password_reset_expires")
+
+  createdAt            DateTime  @default(now())   @map("created_at")
+  updatedAt            DateTime  @updatedAt        @map("updated_at")
+
+  orders               Order[]
   statusHistoryUpdates OrderStatusHistory[] @relation("UpdatedBy")
-  quotes              Quote[]
-  documents           Document[]
+  quotes               Quote[]
+  documents            Document[]
 
   @@map("users")
 }

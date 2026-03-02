@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 
 /**
  * HealthController
@@ -7,6 +8,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
  * Endpoint para verificar que el servicio está activo.
  * Ruta: GET /api/health
  */
+@Public()
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
