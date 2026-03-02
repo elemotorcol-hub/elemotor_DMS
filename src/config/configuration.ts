@@ -37,4 +37,9 @@ export default () => ({
     provider: process.env.OTP_PROVIDER ?? 'mock',
     expiresMinutes: parseInt(process.env.OTP_EXPIRES_MINUTES ?? '5', 10),
   },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? '',
+    apiKey: process.env.CLOUDINARY_API_KEY ?? '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET ?? '',
+  },
 });

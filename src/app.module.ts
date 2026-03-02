@@ -15,6 +15,7 @@ import { TrimsModule } from './modules/trims/trims.module';
 import { SpecsModule } from './modules/specs/specs.module';
 import { ColorsModule } from './modules/colors/colors.module';
 import { ImagesModule } from './modules/images/images.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 /**
  * AppModule — Módulo raíz de la aplicación
@@ -29,6 +30,7 @@ import { ImagesModule } from './modules/images/images.module';
  * - SpecsModule:   CRUD /api/specs
  * - ColorsModule:  CRUD /api/colors
  * - ImagesModule:  CRUD /api/images
+ * - UploadModule:  POST /api/upload/image | /api/upload/file (Cloudinary)
  */
 @Module({
   imports: [
@@ -55,6 +57,7 @@ import { ImagesModule } from './modules/images/images.module';
     SpecsModule,
     ColorsModule,
     ImagesModule,
+    UploadModule,
   ],
   providers: [
     // Guards globales: JwtAuthGuard + RolesGuard aplicados a TODOS los endpoints
