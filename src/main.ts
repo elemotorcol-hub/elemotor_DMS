@@ -3,6 +3,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -29,8 +30,11 @@ async function bootstrap() {
     }),
   );
 
-  // ─── Filtro global de excepciones ────────────────────────────────────────────
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // ─── Filtros globales de excepciones ───────────────────────────────────────
+  app.useGlobalFilters(
+    new HttpExceptionFilter(),
+    new PrismaExceptionFilter(),
+  );
 
   // ─── Swagger ─────────────────────────────────────────────────────────────────
   const swaggerConfig = new DocumentBuilder()

@@ -11,11 +11,17 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryBrandDto } from './dto/query-brand.dto';
 import { Public } from '../auth/decorators/public.decorator';
 
 @Public()
@@ -23,6 +29,8 @@ import { Public } from '../auth/decorators/public.decorator';
 @Controller('brands')
 export class BrandsController {
   constructor(private readonly brandsService: BrandsService) {}
+
+  // ─── Escritura (requeriría Auth en producción; por ahora @Public heredado) ─
 
   @Post()
   @ApiOperation({ summary: 'Crear una nueva marca' })
@@ -33,10 +41,18 @@ export class BrandsController {
     return this.brandsService.create(dto);
   }
 
+  // ─── Lectura pública ──────────────────────────────────────────────────────
+
   @Get()
-  @ApiOperation({ summary: 'Listar todas las marcas (paginado)' })
-  @ApiResponse({ status: 200, description: 'Lista de marcas' })
-  findAll(@Query() query: PaginationDto) {
+  @ApiOperation({ summary: 'Listar marcas con filtros, orden y paginación' })
+  @ApiQuery({ name: 'name', required: false, description: 'Búsqueda parcial por nombre' })
+  @ApiQuery({ name: 'active', required: false, type: Boolean, description: 'Filtrar por estado activo' })
+  @ApiQuery({ name: 'sortBy', required: false, enum: ['name', 'country', 'createdAt'], description: 'Campo de ordenamiento' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'], description: 'Dirección del ordenamiento' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Resultados por página (default: 10, max: 100)' })
+  @ApiResponse({ status: 200, description: 'Lista paginada de marcas' })
+  findAll(@Query() query: QueryBrandDto) {
     return this.brandsService.findAll(query);
   }
 
@@ -48,6 +64,8 @@ export class BrandsController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.brandsService.findOne(id);
   }
+
+  // ─── Mutación ─────────────────────────────────────────────────────────────
 
   @Patch(':id')
   @ApiOperation({ summary: 'Actualizar campos de una marca' })
