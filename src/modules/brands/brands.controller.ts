@@ -16,7 +16,9 @@ import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { Public } from '../auth/decorators/public.decorator';
 
+@Public()
 @ApiTags('brands')
 @Controller('brands')
 export class BrandsController {

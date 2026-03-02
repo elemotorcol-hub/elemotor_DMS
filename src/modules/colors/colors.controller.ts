@@ -16,7 +16,9 @@ import { ColorsService } from './colors.service';
 import { CreateColorDto } from './dto/create-color.dto';
 import { UpdateColorDto } from './dto/update-color.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { Public } from '../auth/decorators/public.decorator';
 
+@Public()
 @ApiTags('colors')
 @Controller('colors')
 export class ColorsController {

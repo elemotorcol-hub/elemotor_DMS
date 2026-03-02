@@ -16,7 +16,9 @@ import { SpecsService } from './specs.service';
 import { CreateSpecDto } from './dto/create-spec.dto';
 import { UpdateSpecDto } from './dto/update-spec.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { Public } from '../auth/decorators/public.decorator';
 
+@Public()
 @ApiTags('specs')
 @Controller('specs')
 export class SpecsController {

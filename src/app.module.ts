@@ -1,8 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import configuration from './config/configuration';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from './modules/auth/guards/roles.guard';
 
 // ── Catálogo / Inventario ────────────────────────────────────────
 import { BrandsModule } from './modules/brands/brands.module';
@@ -41,6 +45,9 @@ import { ImagesModule } from './modules/images/images.module';
     // Infraestructura
     HealthModule,
 
+    // Autenticación — JWT, OAuth, OTP, Guards
+    AuthModule,
+
     // Catálogo — Inventario
     BrandsModule,
     ModelsModule,
@@ -48,6 +55,12 @@ import { ImagesModule } from './modules/images/images.module';
     SpecsModule,
     ColorsModule,
     ImagesModule,
+  ],
+  providers: [
+    // Guards globales: JwtAuthGuard + RolesGuard aplicados a TODOS los endpoints
+    // Los endpoints públicos usan el decorador @Public() para omitirlos
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

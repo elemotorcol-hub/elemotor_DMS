@@ -16,7 +16,9 @@ import { TrimsService } from './trims.service';
 import { CreateTrimDto } from './dto/create-trim.dto';
 import { UpdateTrimDto } from './dto/update-trim.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { Public } from '../auth/decorators/public.decorator';
 
+@Public()
 @ApiTags('trims')
 @Controller('trims')
 export class TrimsController {
