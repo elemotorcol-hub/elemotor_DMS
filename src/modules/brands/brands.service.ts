@@ -1,59 +1,40 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { BrandsRepository, BRAND_LIST_SELECT } from './brands.repository';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
-import {
-  PaginationDto,
-  PaginatedResult,
-} from '../../common/dto/pagination.dto';
+import { QueryBrandDto } from './dto/query-brand.dto';
+import { PaginatedResult } from '../../common/dto/pagination.dto';
 
+export type BrandListResponse = Prisma.BrandGetPayload<{
+  select: typeof BRAND_LIST_SELECT;
+}>;
+
+/**
+ * BrandsService
+ * Capa de lógica de negocio. Solo orquesta operaciones y lanza
+ * excepciones de dominio; NO contiene queries de base de datos.
+ */
 @Injectable()
 export class BrandsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly brandsRepository: BrandsRepository) {}
 
   async create(dto: CreateBrandDto) {
-    try {
-      return await this.prisma.brand.create({ data: dto });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException(
-          `Brand with slug "${dto.slug}" already exists`,
-        );
-      }
-      throw error;
-    }
+    return await this.brandsRepository.create(dto);
   }
 
-  async findAll(query: PaginationDto): Promise<PaginatedResult<any>> {
+  async findAll(
+    query: QueryBrandDto,
+  ): Promise<PaginatedResult<BrandListResponse>> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      this.prisma.brand.findMany({
-        skip,
-        take: limit,
-        orderBy: { name: 'asc' },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          logoUrl: true,
-          country: true,
-          active: true,
-          createdAt: true,
-          _count: { select: { models: true } },
-        },
-      }),
-      this.prisma.brand.count(),
+      this.brandsRepository.findMany(query),
+      this.brandsRepository.count(query),
     ]);
 
     return {
@@ -68,15 +49,7 @@ export class BrandsService {
   }
 
   async findOne(id: number) {
-    const brand = await this.prisma.brand.findUnique({
-      where: { id },
-      include: {
-        models: {
-          where: { active: true },
-          orderBy: { year: 'desc' },
-        },
-      },
-    });
+    const brand = await this.brandsRepository.findById(id);
     if (!brand) {
       throw new NotFoundException(`Brand #${id} not found`);
     }
@@ -84,30 +57,10 @@ export class BrandsService {
   }
 
   async update(id: number, dto: UpdateBrandDto) {
-    try {
-      return await this.prisma.brand.update({ where: { id }, data: dto });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`Brand #${id} not found`);
-      }
-      throw error;
-    }
+    return await this.brandsRepository.update(id, dto);
   }
 
   async remove(id: number) {
-    try {
-      return await this.prisma.brand.delete({ where: { id } });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`Brand #${id} not found`);
-      }
-      throw error;
-    }
+    return await this.brandsRepository.delete(id);
   }
 }
