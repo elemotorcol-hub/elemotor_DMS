@@ -8,6 +8,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
 ![Estado](https://img.shields.io/badge/Estado-En%20Desarrollo-orange?style=for-the-badge)
 
 </div>
@@ -100,6 +101,24 @@ DATABASE_URL="mysql://root:tu_contraseña@localhost:3307/db_elemotor"
 | `PORT`         | Puerto de escucha del servidor NestJS | `4000`            |
 | `DB_PORT`      | Puerto expuesto por Docker para MySQL | `3307`            |
 | `DATABASE_URL` | URL de conexión para Prisma ORM       | —                 |
+
+### ☁️ Cloudinary (Subida de archivos)
+
+El módulo de subida de archivos requiere una cuenta activa en [Cloudinary](https://cloudinary.com). Las credenciales se obtienen desde el **Dashboard → API Keys**.
+
+```env
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+| Variable                | Descripción                            | Dónde encontrarla      |
+| ----------------------- | -------------------------------------- | ---------------------- |
+| `CLOUDINARY_CLOUD_NAME` | Nombre único de tu nube Cloudinary     | Dashboard → Cloud name |
+| `CLOUDINARY_API_KEY`    | Clave pública de la API                | Dashboard → API Keys   |
+| `CLOUDINARY_API_SECRET` | Secreto privado de la API (no exponer) | Dashboard → API Keys   |
+
+> ⚠️ `CLOUDINARY_API_SECRET` **nunca** debe commitearse ni exponerse en el cliente. Mantenerlo exclusivamente en `.env`.
 
 ---
 
