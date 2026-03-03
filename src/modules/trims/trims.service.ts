@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { TrimsRepository, TRIM_LIST_SELECT } from './trims.repository';
 import { CreateTrimDto } from './dto/create-trim.dto';
 import { UpdateTrimDto } from './dto/update-trim.dto';
 import {
@@ -12,13 +12,24 @@ import {
   PaginatedResult,
 } from '../../common/dto/pagination.dto';
 
+export type TrimListResponse = Prisma.TrimGetPayload<{
+  select: typeof TRIM_LIST_SELECT;
+}>;
+
+/**
+ * TrimsService
+ * Capa de lógica de negocio para Trims.
+ * Delega el acceso a datos al TrimsRepository (SRP).
+ */
 @Injectable()
 export class TrimsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly trimsRepository: TrimsRepository) {}
 
   async create(dto: CreateTrimDto) {
+    await this.assertModelExists(dto.modelId);
+
     try {
-      return await this.prisma.trim.create({ data: dto });
+      return await this.trimsRepository.create(dto);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -32,30 +43,13 @@ export class TrimsService {
     }
   }
 
-  async findAll(query: PaginationDto): Promise<PaginatedResult<any>> {
+  async findAll(query: PaginationDto): Promise<PaginatedResult<TrimListResponse>> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
-    const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      this.prisma.trim.findMany({
-        skip,
-        take: limit,
-        orderBy: { price: 'asc' },
-        include: {
-          model: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              year: true,
-              brand: { select: { id: true, name: true, slug: true } },
-            },
-          },
-          _count: { select: { colors: true, images: true } },
-        },
-      }),
-      this.prisma.trim.count(),
+      this.trimsRepository.findMany(query),
+      this.trimsRepository.count(),
     ]);
 
     return {
@@ -70,54 +64,53 @@ export class TrimsService {
   }
 
   async findOne(id: number) {
-    const trim = await this.prisma.trim.findUnique({
-      where: { id },
-      include: {
-        model: {
-          include: {
-            brand: true,
-          },
-        },
-        spec: true,
-        colors: { orderBy: { type: 'asc' } },
-        images: { orderBy: { sortOrder: 'asc' } },
-      },
-    });
+    const trim = await this.trimsRepository.findById(id);
     if (!trim) {
-      throw new NotFoundException(`Trim #${id} not found`);
+      throw new NotFoundException(`Trim #${id} not found or is inactive`);
     }
     return trim;
   }
 
   async update(id: number, dto: UpdateTrimDto) {
+    await this.assertTrimExists(id);
+
+    if (dto.modelId !== undefined) {
+      await this.assertModelExists(dto.modelId);
+    }
+
     try {
-      return await this.prisma.trim.update({ where: { id }, data: dto });
+      return await this.trimsRepository.update(id, dto);
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new NotFoundException(`Trim #${id} not found`);
-        }
-        if (error.code === 'P2003') {
-          throw new BadRequestException(
-            `Foreign key constraint failed. Check references.`,
-          );
-        }
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new BadRequestException(
+          `Foreign key constraint failed. Check that modelId exists.`,
+        );
       }
       throw error;
     }
   }
 
   async remove(id: number) {
-    try {
-      return await this.prisma.trim.delete({ where: { id } });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`Trim #${id} not found`);
-      }
-      throw error;
+    await this.assertTrimExists(id);
+    return this.trimsRepository.softDelete(id);
+  }
+
+  private async assertTrimExists(id: number): Promise<void> {
+    const trim = await this.trimsRepository.findByIdAdmin(id);
+    if (!trim) {
+      throw new NotFoundException(`Trim #${id} not found`);
+    }
+  }
+
+  private async assertModelExists(modelId: number): Promise<void> {
+    const model = await this.trimsRepository.findModelById(modelId);
+    if (!model) {
+      throw new BadRequestException(
+        `Model #${modelId} does not exist. Provide a valid modelId.`,
+      );
     }
   }
 }
