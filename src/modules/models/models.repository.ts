@@ -25,8 +25,7 @@ export const MODEL_LIST_SELECT = {
 /**
  * ModelsRepository
  * Capa de acceso a datos para el modelo Model.
- * Centraliza todas las queries Prisma; el servicio NO accede
- * directamente a PrismaService (principio DIP + SRP).
+ * Centraliza todas las queries Prisma (DIP + SRP).
  */
 @Injectable()
 export class ModelsRepository {
@@ -41,7 +40,6 @@ export class ModelsRepository {
     }
 
     if (filters.name) {
-      // MySQL is case-insensitive by default with utf8mb4_unicode_ci collation
       where.name = { contains: filters.name };
     }
 
@@ -55,6 +53,9 @@ export class ModelsRepository {
 
     if (filters.active !== undefined) {
       where.active = filters.active;
+    } else {
+      // Endpoints públicos solo ven registros activos por defecto
+      where.active = true;
     }
 
     if (filters.featured !== undefined) {
@@ -65,8 +66,8 @@ export class ModelsRepository {
   }
 
   /**
-   * findMany — Lista de modelos con filtros, ordenamiento y paginación.
-   * Incluye datos mínimos de la marca en una sola query (sin N+1).
+   * findMany — Lista de modelos con filtros, paginación y datos de marca.
+   * Una sola query sin N+1 (brand incluido via select relacional).
    */
   async findMany(filters: QueryModelDto) {
     const page = filters.page ?? 1;
@@ -91,12 +92,12 @@ export class ModelsRepository {
   }
 
   /**
-   * findById — Detalle de modelo con marca y trims activos.
-   * Devuelve null si no existe (el servicio lanza NotFoundException).
+   * findById — Detalle público (solo activos).
+   * Incluye marca y trims activos. Retorna null si no existe o inactivo.
    */
   async findById(id: number) {
-    return this.prisma.model.findUnique({
-      where: { id },
+    return this.prisma.model.findFirst({
+      where: { id, active: true },
       include: {
         brand: true,
         trims: {
@@ -111,6 +112,38 @@ export class ModelsRepository {
     });
   }
 
+  /**
+   * findByIdAdmin — Acceso admin: retorna el modelo sin filtrar por active.
+   * Usado en update() y remove() para verificar existencia.
+   */
+  async findByIdAdmin(id: number) {
+    return this.prisma.model.findUnique({
+      where: { id },
+      select: { id: true, slug: true, active: true },
+    });
+  }
+
+  /** findBySlug — Busca por slug (para validar unicidad). */
+  async findBySlug(slug: string) {
+    return this.prisma.model.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+  }
+
+  /** findBrandById — Verifica existencia de la marca referenciada. */
+  async findBrandById(brandId: number) {
+    return this.prisma.brand.findUnique({
+      where: { id: brandId },
+      select: { id: true },
+    });
+  }
+
+  /** countActiveTrims — Número de trims activos del modelo (integridad referencial). */
+  async countActiveTrims(modelId: number): Promise<number> {
+    return this.prisma.trim.count({ where: { modelId, active: true } });
+  }
+
   /** create */
   async create(data: CreateModelDto) {
     return this.prisma.model.create({ data });
@@ -121,8 +154,11 @@ export class ModelsRepository {
     return this.prisma.model.update({ where: { id }, data });
   }
 
-  /** delete */
-  async delete(id: number) {
-    return this.prisma.model.delete({ where: { id } });
+  /** softDelete — Establece active = false (sin eliminación física). */
+  async softDelete(id: number) {
+    return this.prisma.model.update({
+      where: { id },
+      data: { active: false },
+    });
   }
 }

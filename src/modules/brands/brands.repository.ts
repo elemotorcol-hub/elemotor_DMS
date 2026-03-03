@@ -19,9 +19,8 @@ export const BRAND_LIST_SELECT = {
 
 /**
  * BrandsRepository
- * Capa de acceso a datos para el modelo Brand.
- * Centraliza todas las queries Prisma; el servicio NO accede
- * directamente a PrismaService (principio DIP + SRP).
+ * Capa de acceso a datos. Centraliza todas las queries Prisma.
+ * El servicio NO accede directamente a PrismaService (DIP + SRP).
  */
 @Injectable()
 export class BrandsRepository {
@@ -32,20 +31,22 @@ export class BrandsRepository {
     const where: Prisma.BrandWhereInput = {};
 
     if (filters.name) {
-      // MySQL is case-insensitive by default with utf8mb4_unicode_ci collation
       where.name = { contains: filters.name };
     }
 
     if (filters.active !== undefined) {
       where.active = filters.active;
+    } else {
+      // Endpoints públicos solo ven registros activos por defecto
+      where.active = true;
     }
 
     return where;
   }
 
   /**
-   * findMany — Lista de marcas con filtros, ordenamiento y paginación.
-   * Query única, sin N+1: _count se resuelve en una sola consulta Prisma.
+   * findMany — Lista paginada. Fuerza active=true para endpoints públicos
+   * salvo que el filtro lo indique explícitamente.
    */
   async findMany(filters: QueryBrandDto) {
     const page = filters.page ?? 1;
@@ -64,18 +65,18 @@ export class BrandsRepository {
     });
   }
 
-  /** count — Total de registros que coinciden con los filtros */
+  /** count — Total que coinciden con los filtros */
   async count(filters: QueryBrandDto): Promise<number> {
     return this.prisma.brand.count({ where: this.buildWhere(filters) });
   }
 
   /**
-   * findById — Detalle de marca con sus modelos activos.
-   * Devuelve null si no existe (el servicio lanza NotFoundException).
+   * findById — Detalle público. Solo retorna marca activa con modelos activos.
+   * Devuelve null si no existe o está inactiva.
    */
   async findById(id: number) {
-    return this.prisma.brand.findUnique({
-      where: { id },
+    return this.prisma.brand.findFirst({
+      where: { id, active: true },
       include: {
         models: {
           where: { active: true },
@@ -95,6 +96,30 @@ export class BrandsRepository {
     });
   }
 
+  /**
+   * findByIdAdmin — Acceso admin: retorna la marca sin filtrar por active.
+   * Usado en update() y remove() para verificar existencia.
+   */
+  async findByIdAdmin(id: number) {
+    return this.prisma.brand.findUnique({
+      where: { id },
+      select: { id: true, slug: true, active: true },
+    });
+  }
+
+  /** findBySlug — Busca por slug (para validar unicidad). */
+  async findBySlug(slug: string) {
+    return this.prisma.brand.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+  }
+
+  /** countActiveModels — Cuenta modelos activos de la marca (integridad referencial). */
+  async countActiveModels(brandId: number): Promise<number> {
+    return this.prisma.model.count({ where: { brandId, active: true } });
+  }
+
   /** create */
   async create(data: CreateBrandDto) {
     return this.prisma.brand.create({ data });
@@ -105,8 +130,11 @@ export class BrandsRepository {
     return this.prisma.brand.update({ where: { id }, data });
   }
 
-  /** delete */
-  async delete(id: number) {
-    return this.prisma.brand.delete({ where: { id } });
+  /** softDelete — Establece active = false (sin eliminación física). */
+  async softDelete(id: number) {
+    return this.prisma.brand.update({
+      where: { id },
+      data: { active: false },
+    });
   }
 }

@@ -4,7 +4,7 @@ import {
   IsInt,
   IsEnum,
   MaxLength,
-  Length,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ColorType } from '@prisma/client';
@@ -22,11 +22,13 @@ export class CreateColorDto {
   name: string;
 
   @ApiProperty({
-    example: '4A90D9',
-    description: 'Código hexadecimal del color (sin #, exactamente 6 chars)',
+    example: '#4A90D9',
+    description: 'Código hexadecimal del color en formato #RRGGBB (incluyendo el #)',
   })
   @IsString()
-  @Length(6, 6)
+  @Matches(/^#[0-9A-Fa-f]{6}$/, {
+    message: 'hexCode must be a valid HEX color in the format #RRGGBB (e.g. #FF0033)',
+  })
   hexCode: string;
 
   @ApiProperty({

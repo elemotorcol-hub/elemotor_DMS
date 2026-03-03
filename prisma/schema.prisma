@@ -55,6 +55,7 @@ enum LodLevel {
 enum UserRole {
   client
   admin
+  super_admin
 }
 
 enum OrderStatus {
