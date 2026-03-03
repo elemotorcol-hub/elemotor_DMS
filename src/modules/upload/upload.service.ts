@@ -18,6 +18,7 @@ const FOLDERS: Record<AssetType, string> = {
   document: 'elemotor/docs',
 };
 
+
 @Injectable()
 export class UploadService {
   private readonly logger = new Logger(UploadService.name);
@@ -35,13 +36,38 @@ export class UploadService {
    * Sube una imagen (jpg | png | webp) a Cloudinary.
    * Carpeta destino: elemotor/vehicles
    * Tamaño máximo: 5 MB
-   *
-   * @param file - Archivo recibido de Multer (buffer en memoria)
-   * @returns UploadResultDto con publicUrl, publicId, format y size
    */
   async uploadImage(file: Express.Multer.File): Promise<UploadResultDto> {
     validateFile(file, FileUploadType.IMAGE);
     return this.streamToCloudinary(file, FileUploadType.IMAGE, 'image');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // uploadTrimImage
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Sube una imagen de trim a Cloudinary.
+   * Carpeta destino: elemotor/vehicles (misma que /api/upload/image)
+   * Tamaño máximo: 5 MB
+   */
+  async uploadTrimImage(file: Express.Multer.File): Promise<UploadResultDto> {
+    validateFile(file, FileUploadType.IMAGE);
+    return this.streamToCloudinary(file, FileUploadType.IMAGE, 'image');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // uploadTrimModel3d
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Sube un modelo 3D (.glb) de trim a Cloudinary.
+   * Carpeta destino: elemotor/3d (misma que /api/upload/file)
+   * Tamaño máximo: 15 MB
+   */
+  async uploadTrimModel3d(file: Express.Multer.File): Promise<UploadResultDto> {
+    validateFile(file, FileUploadType.MODEL_3D);
+    return this.streamToCloudinary(file, FileUploadType.MODEL_3D, 'raw');
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -50,22 +76,55 @@ export class UploadService {
 
   /**
    * Sube un archivo 3D (.glb) o documento PDF a Cloudinary.
-   * Carpetas destino:
-   *   - model3d → elemotor/3d
-   *   - document → elemotor/docs
-   * Tamaños máximos: 3D = 15 MB | PDF = 10 MB
-   *
-   * @param file - Archivo recibido de Multer
-   * @param type - 'model3d' | 'document'
-   * @returns UploadResultDto con publicUrl, publicId, format y size
    */
   async uploadFile(
     file: Express.Multer.File,
     type: FileUploadType.MODEL_3D | FileUploadType.DOCUMENT,
   ): Promise<UploadResultDto> {
     validateFile(file, type);
-    // Cloudinary maneja archivos no-imagen con resource_type 'raw'
     return this.streamToCloudinary(file, type, 'raw');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // deleteFile
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Elimina un archivo de Cloudinary usando su publicId.
+   * @param publicId - Identificador del recurso en Cloudinary (ej: trims/images/abc123)
+   * @param resourceType - 'image' para imágenes, 'raw' para GLB u otros binarios
+   */
+  async deleteFile(
+    publicId: string,
+    resourceType: 'image' | 'raw' = 'image',
+  ): Promise<void> {
+    try {
+      const result = await this.cloudinary.uploader.destroy(publicId, {
+        resource_type: resourceType,
+      });
+
+      if (result.result !== 'ok' && result.result !== 'not found') {
+        throw new InternalServerErrorException(
+          `Cloudinary no pudo eliminar el archivo: ${result.result}`,
+        );
+      }
+
+      if (result.result === 'not found') {
+        this.logger.warn(
+          `Cloudinary: archivo no encontrado al eliminar (publicId: ${publicId}). Puede haber sido eliminado previamente.`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      this.logger.error(
+        `Cloudinary deleteFile falló [publicId: ${publicId}]: ${(error as Error).message}`,
+      );
+      throw new InternalServerErrorException(
+        'Error al eliminar el archivo en Cloudinary. Inténtelo más tarde.',
+      );
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -73,27 +132,40 @@ export class UploadService {
   // ─────────────────────────────────────────────────────────────────────────────
 
   /**
+   * Extrae el nombre del archivo sin extensión y limpia caracteres problemáticos.
+   */
+  private sanitizeFilename(originalname: string): string {
+    const nameWithoutExt = originalname.substring(0, originalname.lastIndexOf('.')) || originalname;
+    return nameWithoutExt
+      .normalize('NFD') // Descompone tildes/acentos
+      .replace(/[\u0300-\u036f]/g, '') // Elimina diacríticos
+      .replace(/[^a-zA-Z0-9_\-]/g, '_') // Reemplaza lo no alfanumérico por "_"
+      .replace(/_+/g, '_') // Evita múltiples guiones bajos seguidos
+      .replace(/^_|_$/g, ''); // Quita guiones iniciales o finales
+  }
+
+  /**
    * Convierte el buffer de Multer en un readable stream y lo sube
    * a Cloudinary usando upload_stream (sin escribir en disco).
-   *
-   * @param file         - Archivo Multer
-   * @param assetType    - Tipo lógico para determinar la carpeta
-   * @param resourceType - Tipo de recurso de Cloudinary ('image' | 'raw')
    */
   private streamToCloudinary(
     file: Express.Multer.File,
     assetType: AssetType,
     resourceType: 'image' | 'raw',
+    folderOverride?: string,
   ): Promise<UploadResultDto> {
     return new Promise((resolve, reject) => {
-      const folder = FOLDERS[assetType];
+      const folder = folderOverride ?? FOLDERS[assetType];
+
+      const sanitizedName = this.sanitizeFilename(file.originalname);
 
       const uploadStream = this.cloudinary.uploader.upload_stream(
         {
           folder,
           resource_type: resourceType,
-          use_filename: false,
-          unique_filename: true,
+          use_filename: true, // Usa el nombre que le pasamos
+          filename_override: sanitizedName,
+          unique_filename: true, // Cloudinary le añadirá un sufijo aleatorio para evitar colisiones
           overwrite: false,
         },
         (error, result) => {

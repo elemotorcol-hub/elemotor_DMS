@@ -47,10 +47,10 @@ export async function seedTrimsSpecsColorsImages(prisma: PrismaClient) {
     prisma.image.createMany({
       skipDuplicates: true,
       data: [
-        { trimId: sealUDynamic.id, url: 'https://res.cloudinary.com/elemotor/image/upload/models/seal-u/hero.jpg', altText: 'BYD Seal U Dynamic — Vista frontal', type: ImageType.hero, sortOrder: 0 },
-        { trimId: sealUDynamic.id, url: 'https://res.cloudinary.com/elemotor/image/upload/models/seal-u/gallery1.jpg', altText: 'BYD Seal U Dynamic — Lateral', type: ImageType.gallery, sortOrder: 1 },
-        { trimId: dolphinStd.id, url: 'https://res.cloudinary.com/elemotor/image/upload/models/dolphin/hero.jpg', altText: 'BYD Dolphin — Vista frontal', type: ImageType.hero, sortOrder: 0 },
-        { trimId: oraCatPro.id, url: 'https://res.cloudinary.com/elemotor/image/upload/models/ora-cat/hero.jpg', altText: 'ORA Good Cat Pro — Vista frontal', type: ImageType.hero, sortOrder: 0 },
+        { trimId: sealUDynamic.id, url: 'https://res.cloudinary.com/elemotor/image/upload/models/seal-u/hero.jpg', publicId: '', altText: 'BYD Seal U Dynamic — Vista frontal', type: ImageType.hero, sortOrder: 0 },
+        { trimId: sealUDynamic.id, url: 'https://res.cloudinary.com/elemotor/image/upload/models/seal-u/gallery1.jpg', publicId: '', altText: 'BYD Seal U Dynamic — Lateral', type: ImageType.gallery, sortOrder: 1 },
+        { trimId: dolphinStd.id, url: 'https://res.cloudinary.com/elemotor/image/upload/models/dolphin/hero.jpg', publicId: '', altText: 'BYD Dolphin — Vista frontal', type: ImageType.hero, sortOrder: 0 },
+        { trimId: oraCatPro.id, url: 'https://res.cloudinary.com/elemotor/image/upload/models/ora-cat/hero.jpg', publicId: '', altText: 'ORA Good Cat Pro — Vista frontal', type: ImageType.hero, sortOrder: 0 },
       ],
     }),
   ]);
