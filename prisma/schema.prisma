@@ -219,9 +219,11 @@ model Image {
   id        Int       @id @default(autoincrement())
   trimId    Int       @map("trim_id")
   url       String    @db.VarChar(500)
+  publicId  String    @db.VarChar(255) @map("public_id")
   altText   String?   @db.VarChar(255) @map("alt_text")
   type      ImageType
   sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   trim Trim @relation(fields: [trimId], references: [id])
 
@@ -231,17 +233,18 @@ model Image {
 }
 
 model Model3d {
-  id             Int           @id @default(autoincrement())
-  trimId         Int           @map("trim_id")
-  fileUrl        String        @db.VarChar(500) @map("file_url")
-  fileSizeMb     Decimal?      @db.Decimal(8, 2) @map("file_size_mb")
-  format         Model3dFormat
-  dracoCompressed Boolean      @default(false) @map("draco_compressed")
-  lodLevel       LodLevel      @map("lod_level")
+  id              Int            @id @default(autoincrement())
+  trimId          Int            @unique @map("trim_id")
+  fileUrl         String         @db.VarChar(500) @map("file_url")
+  publicId        String         @db.VarChar(255) @map("public_id")
+  fileSizeMb      Decimal?       @db.Decimal(8, 2) @map("file_size_mb")
+  format          Model3dFormat? 
+  dracoCompressed Boolean        @default(false) @map("draco_compressed")
+  lodLevel        LodLevel?      @map("lod_level")
+  createdAt       DateTime       @default(now()) @map("created_at")
 
   trim Trim @relation(fields: [trimId], references: [id])
 
-  @@index([trimId])
   @@map("models_3d")
 }
 

@@ -262,6 +262,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
       {
         trimId: atto3Base.id,
         url: 'https://res.cloudinary.com/elemotor/image/upload/models/atto3/hero.jpg',
+        publicId: '',
         altText: 'BYD Atto 3 Base — Vista frontal',
         type: ImageType.hero,
         sortOrder: 0,
@@ -269,6 +270,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
       {
         trimId: atto3Base.id,
         url: 'https://res.cloudinary.com/elemotor/image/upload/models/atto3/exterior1.jpg',
+        publicId: '',
         altText: 'BYD Atto 3 — Vista lateral',
         type: ImageType.exterior,
         sortOrder: 1,
@@ -276,6 +278,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
       {
         trimId: atto3Base.id,
         url: 'https://res.cloudinary.com/elemotor/image/upload/models/atto3/interior1.jpg',
+        publicId: '',
         altText: 'BYD Atto 3 — Interior',
         type: ImageType.interior,
         sortOrder: 2,
@@ -283,6 +286,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
       {
         trimId: atto3Comfort.id,
         url: 'https://res.cloudinary.com/elemotor/image/upload/models/atto3/hero.jpg',
+        publicId: '',
         altText: 'BYD Atto 3 Comfort — Vista frontal',
         type: ImageType.hero,
         sortOrder: 0,
@@ -291,6 +295,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
       {
         trimId: tiggoBase.id,
         url: 'https://res.cloudinary.com/elemotor/image/upload/models/tiggo7e/hero.jpg',
+        publicId: '',
         altText: 'Chery Tiggo 7 Pro E — Vista frontal',
         type: ImageType.hero,
         sortOrder: 0,
@@ -298,6 +303,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
       {
         trimId: tiggoBase.id,
         url: 'https://res.cloudinary.com/elemotor/image/upload/models/tiggo7e/gallery1.jpg',
+        publicId: '',
         altText: 'Chery Tiggo 7 Pro E — Lateral',
         type: ImageType.gallery,
         sortOrder: 1,
@@ -305,6 +311,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
       {
         trimId: tiggoBase.id,
         url: 'https://res.cloudinary.com/elemotor/image/upload/models/tiggo7e/interior1.jpg',
+        publicId: '',
         altText: 'Chery Tiggo 7 Pro E — Interior PHEV',
         type: ImageType.interior,
         sortOrder: 2,
@@ -313,6 +320,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
       {
         trimId: sealUPremium.id,
         url: 'https://res.cloudinary.com/elemotor/image/upload/models/seal-u/premium-hero.jpg',
+        publicId: '',
         altText: 'BYD Seal U Premium — Vista frontal',
         type: ImageType.hero,
         sortOrder: 0,
@@ -320,6 +328,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
       {
         trimId: sealUPremium.id,
         url: 'https://res.cloudinary.com/elemotor/image/upload/models/seal-u/premium-panoramic.jpg',
+        publicId: '',
         altText: 'BYD Seal U Premium — Vista 360°',
         type: ImageType.panoramic,
         sortOrder: 1,
@@ -342,6 +351,7 @@ export async function seedExtraTrimsAndSpecs(prisma: PrismaClient) {
         trimId: sealUDynamic.id,
         fileUrl:
           'https://res.cloudinary.com/elemotor/raw/upload/models/seal-u/seal-u-dynamic.glb',
+        publicId: '',
         fileSizeMb: 24.5,
         format: Model3dFormat.glb,
         dracoCompressed: true,
