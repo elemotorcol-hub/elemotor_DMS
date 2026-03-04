@@ -17,6 +17,7 @@ import { ColorsModule } from './modules/colors/colors.module';
 import { ImagesModule } from './modules/images/images.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { Models3dModule } from './modules/models-3d/models-3d.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 /**
  * AppModule — Módulo raíz de la aplicación
@@ -33,6 +34,7 @@ import { Models3dModule } from './modules/models-3d/models-3d.module';
  * - ImagesModule:    CRUD /api/images (con upload Cloudinary)
  * - Models3dModule:  POST/DELETE /api/models-3d (modelos GLB)
  * - UploadModule:    POST /api/upload/image | /api/upload/file (Cloudinary)
+ * - OrdersModule:   CRUD /api/orders (pedidos de importación)
  */
 @Module({
   imports: [
@@ -61,6 +63,9 @@ import { Models3dModule } from './modules/models-3d/models-3d.module';
     ImagesModule,
     UploadModule,
     Models3dModule,
+
+    // Pedidos de importación
+    OrdersModule,
   ],
   providers: [
     // Guards globales: JwtAuthGuard + RolesGuard aplicados a TODOS los endpoints
