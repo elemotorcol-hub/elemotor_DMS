@@ -284,16 +284,17 @@ model User {
 }
 
 model Order {
-  id               Int         @id @default(autoincrement())
-  userId           Int         @map("user_id")
-  trimId           Int         @map("trim_id")
-  colorId          Int         @map("color_id")
-  trackingCode     String?     @unique @db.VarChar(50) @map("tracking_code")
-  status           OrderStatus
-  estimatedDelivery DateTime?  @db.Date @map("estimated_delivery")
-  vin              String?     @db.VarChar(50)
-  createdAt        DateTime    @default(now()) @map("created_at")
-  updatedAt        DateTime    @updatedAt @map("updated_at")
+  id                Int         @id @default(autoincrement())
+  userId            Int         @map("user_id")
+  trimId            Int         @map("trim_id")
+  colorId           Int         @map("color_id")
+  trackingCode      String?     @unique @db.VarChar(50) @map("tracking_code")
+  status            OrderStatus
+  estimatedDelivery DateTime?   @db.Date @map("estimated_delivery")
+  vin               String?     @db.VarChar(17)
+  notes             String?     @db.Text
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
 
   user          User                 @relation(fields: [userId], references: [id])
   trim          Trim                 @relation(fields: [trimId], references: [id])
@@ -304,22 +305,33 @@ model Order {
   @@index([userId])
   @@index([trimId])
   @@index([colorId])
+  @@index([status])
+  @@index([createdAt])
   @@map("orders")
 }
 
 model OrderStatusHistory {
-  id          Int         @id @default(autoincrement())
-  orderId     Int         @map("order_id")
-  status      OrderStatus
-  description String?     @db.Text
-  date        DateTime
-  updatedById Int?        @map("updated_by")
+  id             Int          @id @default(autoincrement())
+  orderId        Int          @map("order_id")
+  previousStatus OrderStatus? @map("previous_status")
+  status         OrderStatus
+  description    String?      @db.Text
+  date           DateTime     @default(now())
+  updatedById    Int?         @map("updated_by")
 
   order     Order @relation(fields: [orderId], references: [id])
   updatedBy User? @relation("UpdatedBy", fields: [updatedById], references: [id])
 
   @@index([orderId])
   @@map("order_status_history")
+}
+
+/// Contador atómico por año para generar tracking codes ELE-YYYY-NNNNN sin colisiones.
+model TrackingCounter {
+  year    Int @id
+  lastSeq Int @default(0) @map("last_seq")
+
+  @@map("tracking_counters")
 }
 
 model Quote {
