@@ -15,6 +15,7 @@ import * as nodemailer from 'nodemailer';
 import { User } from '@prisma/client';
 
 import { AuthRepository } from './auth.repository';
+import { QuotesRepository } from '../quotes/quotes.repository';
 import { IAuthService } from './interfaces/auth-service.interface';
 import { IAuthResponse, IRefreshResponse, ISafeUser } from './interfaces/auth-response.interface';
 import { ITokenPayload } from './interfaces/token-payload.interface';
@@ -45,6 +46,7 @@ export class AuthService implements IAuthService {
 
   constructor(
     private readonly authRepository: AuthRepository,
+    private readonly quotesRepository: QuotesRepository,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
   ) {
@@ -72,6 +74,9 @@ export class AuthService implements IAuthService {
       phone: dto.phone,
       passwordHash,
     });
+
+    // Link any anonymous quotes created before registration (fire-and-forget).
+    this.claimQuotesForNewUser(user, 'local');
 
     return this.buildAuthResponse(user);
   }
@@ -150,6 +155,9 @@ export class AuthService implements IAuthService {
         avatarUrl,
         emailVerifiedAt: new Date(),
       });
+
+      // Link anonymous quotes created before the Google sign-up (fire-and-forget)
+      this.claimQuotesForNewUser(user, 'Google');
     }
 
     return this.buildAuthResponse(user);
@@ -415,5 +423,25 @@ export class AuthService implements IAuthService {
         <p>El equipo de EleMotor</p>
       `,
     });
+  }
+
+  /** Relaciona cotizaciones anónimas previas con el nuevo usuario registrado */
+  private claimQuotesForNewUser(user: User, providerName: string = 'local'): void {
+    // We intentionally do NOT await to keep the auth response fast.
+    this.quotesRepository
+      .claimAnonymousByEmail(user.email, user.id)
+      .then((count) => {
+        if (count > 0) {
+          this.logger.log(
+            `Linked ${count} anonymous quote(s) to new ${providerName} user #${user.id} (${user.email})`,
+          );
+        }
+      })
+      .catch((err: unknown) => {
+        this.logger.error(
+          `Failed to claim anonymous quotes for ${providerName} user #${user.id}`,
+          err instanceof Error ? err.message : String(err),
+        );
+      });
   }
 }

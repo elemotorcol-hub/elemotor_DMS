@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { QuotesModule } from '../quotes/quotes.module';
 
 /**
  * AuthModule — Módulo de autenticación.
@@ -42,6 +43,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         limit: 5,
       },
     ]),
+
+    QuotesModule,
   ],
   controllers: [AuthController],
   providers: [
