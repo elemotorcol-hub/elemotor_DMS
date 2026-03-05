@@ -217,7 +217,7 @@ export async function seedExtraUsersOrdersAndQuotes(prisma: PrismaClient) {
       message:
         'Me gustaría conocer más sobre el BYD Atto 3. ¿Tienen servicio post-venta en Medellín?',
       referenceCode: 'COT-2025-00003',
-      status: QuoteStatus.closed,
+      status: QuoteStatus.closed_won,
       utmSource: 'google',
       utmMedium: 'cpc',
       utmCampaign: 'atto3-medellin-2025',

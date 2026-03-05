@@ -18,6 +18,7 @@ import { ImagesModule } from './modules/images/images.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { Models3dModule } from './modules/models-3d/models-3d.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { QuotesModule } from './modules/quotes/quotes.module';
 
 /**
  * AppModule — Módulo raíz de la aplicación
@@ -66,6 +67,9 @@ import { OrdersModule } from './modules/orders/orders.module';
 
     // Pedidos de importación
     OrdersModule,
+
+    // Cotizaciones / Leads
+    QuotesModule,
   ],
   providers: [
     // Guards globales: JwtAuthGuard + RolesGuard aplicados a TODOS los endpoints

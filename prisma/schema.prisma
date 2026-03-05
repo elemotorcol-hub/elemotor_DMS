@@ -76,8 +76,11 @@ enum PreferredChannel {
 
 enum QuoteStatus {
   pending
+  contacted
   responded
-  closed
+  negotiation
+  closed_won
+  closed_lost
 }
 
 enum DocumentType {
@@ -277,7 +280,8 @@ model User {
 
   orders               Order[]
   statusHistoryUpdates OrderStatusHistory[] @relation("UpdatedBy")
-  quotes               Quote[]
+  quotes               Quote[]              @relation("QuoteUser")
+  assignedQuotes       Quote[]              @relation("QuoteAssignedTo")
   documents            Document[]
 
   @@map("users")
@@ -334,9 +338,18 @@ model TrackingCounter {
   @@map("tracking_counters")
 }
 
+/// Contador atómico por año para generar reference codes COT-YYYY-NNNNN sin colisiones.
+model QuoteCounter {
+  year    Int @id
+  lastSeq Int @default(0) @map("last_seq")
+
+  @@map("quote_counters")
+}
+
 model Quote {
   id               Int              @id @default(autoincrement())
   userId           Int?             @map("user_id")
+  assignedToId     Int?             @map("assigned_to")
   name             String           @db.VarChar(255)
   email            String           @db.VarChar(255)
   phone            String?          @db.VarChar(50)
@@ -346,6 +359,8 @@ model Quote {
   budgetRange      Decimal?         @db.Decimal(15, 2) @map("budget_range")
   preferredChannel PreferredChannel @map("preferred_channel")
   message          String?          @db.Text
+  notes            String?          @db.Text
+  source           String?          @db.VarChar(100)
   referenceCode    String?          @unique @db.VarChar(50) @map("reference_code")
   status           QuoteStatus      @default(pending)
   utmSource        String?          @db.VarChar(100) @map("utm_source")
@@ -354,13 +369,18 @@ model Quote {
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
 
-  user  User?  @relation(fields: [userId], references: [id])
-  model Model? @relation(fields: [modelId], references: [id])
-  trim  Trim?  @relation(fields: [trimId], references: [id])
+  user       User?  @relation("QuoteUser",       fields: [userId],       references: [id])
+  assignedTo User?  @relation("QuoteAssignedTo", fields: [assignedToId], references: [id])
+  model      Model? @relation(fields: [modelId], references: [id])
+  trim       Trim?  @relation(fields: [trimId],  references: [id])
 
   @@index([userId])
+  @@index([assignedToId])
   @@index([modelId])
   @@index([trimId])
+  @@index([status])
+  @@index([source])
+  @@index([createdAt])
   @@map("quotes")
 }
 
