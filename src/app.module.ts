@@ -19,6 +19,8 @@ import { UploadModule } from './modules/upload/upload.module';
 import { Models3dModule } from './modules/models-3d/models-3d.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
+import { UsersModule } from './modules/users/users.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 
 /**
  * AppModule — Módulo raíz de la aplicación
@@ -36,6 +38,9 @@ import { QuotesModule } from './modules/quotes/quotes.module';
  * - Models3dModule:  POST/DELETE /api/models-3d (modelos GLB)
  * - UploadModule:    POST /api/upload/image | /api/upload/file (Cloudinary)
  * - OrdersModule:   CRUD /api/orders (pedidos de importación)
+ * - QuotesModule:   Gestión de cotizaciones/leads
+ * - UsersModule:    Gestión de usuarios y roles
+ * - DocumentsModule: Gestión de documentos vinculados a pedidos
  */
 @Module({
   imports: [
@@ -55,6 +60,9 @@ import { QuotesModule } from './modules/quotes/quotes.module';
     // Autenticación — JWT, OAuth, OTP, Guards
     AuthModule,
 
+    // Usuarios y Roles
+    UsersModule,
+
     // Catálogo — Inventario
     BrandsModule,
     ModelsModule,
@@ -67,6 +75,9 @@ import { QuotesModule } from './modules/quotes/quotes.module';
 
     // Pedidos de importación
     OrdersModule,
+
+    // Documentos anexos a pedidos
+    DocumentsModule,
 
     // Cotizaciones / Leads
     QuotesModule,

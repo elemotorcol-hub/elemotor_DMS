@@ -17,6 +17,6 @@ import { UploadController } from './upload.controller';
 @Module({
   providers: [CloudinaryProvider, UploadService],
   controllers: [UploadController],
-  exports: [UploadService],
+  exports: [UploadService, CloudinaryProvider],
 })
 export class UploadModule {}
