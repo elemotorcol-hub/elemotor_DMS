@@ -36,10 +36,8 @@ export class BrandsRepository {
 
     if (filters.active !== undefined) {
       where.active = filters.active;
-    } else {
-      // Endpoints públicos solo ven registros activos por defecto
-      where.active = true;
     }
+    // removed default where.active = true to allow fetching all records in the admin panel if no filter is provided.
 
     return where;
   }
@@ -50,11 +48,12 @@ export class BrandsRepository {
    */
   async findMany(filters: QueryBrandDto) {
     const page = filters.page ?? 1;
-    const limit = filters.limit ?? 10;
+    // Removido el limite estricto para que la tabla admin traiga todos por defecto si no se le pasa limit.
+    const limit = filters.limit ?? 1000; 
     const skip = (page - 1) * limit;
     const where = this.buildWhere(filters);
-    const sortBy = filters.sortBy ?? 'name';
-    const order = filters.order ?? 'asc';
+    const sortBy = filters.sortBy ?? 'createdAt'; // Changed to createdAt to see newest
+    const order = filters.order ?? 'desc';
 
     return this.prisma.brand.findMany({
       where,

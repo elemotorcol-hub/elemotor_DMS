@@ -11,8 +11,16 @@ async function bootstrap() {
 
   // ─── CORS ────────────────────────────────────────────────────────────────────
   const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+  
+  // Agregar explicitly 3001 para soportar el hot-reload actual del frontend sin tener que reiniciar para leer el .env
+  const allowedOrigins = [
+    ...frontendUrl.split(','),
+    'http://localhost:3001',
+    'http://127.0.0.1:3001'
+  ];
+
   app.enableCors({
-    origin: frontendUrl.split(','),
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     credentials: true,
