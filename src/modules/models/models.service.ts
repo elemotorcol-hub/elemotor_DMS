@@ -60,6 +60,14 @@ export class ModelsService {
     return model;
   }
 
+  async findOneAdmin(id: number) {
+    const model = await this.modelsRepository.findByIdAdminFull(id);
+    if (!model) {
+      throw new NotFoundException(`Model #${id} not found`);
+    }
+    return model;
+  }
+
   async update(id: number, dto: UpdateModelDto) {
     // Verify model exists (regardless of active status)
     const existing = await this.modelsRepository.findByIdAdmin(id);

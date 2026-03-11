@@ -77,6 +77,17 @@ export class ModelsController {
     return this.modelsService.findOne(id);
   }
 
+  @Get('admin/:id')
+  @Roles(UserRole.admin, UserRole.super_admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Obtener modelo por ID sin restricción de estado' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Modelo encontrado' })
+  @ApiResponse({ status: 404, description: 'Modelo no encontrado' })
+  findOneAdmin(@Param('id', ParseIntPipe) id: number) {
+    return this.modelsService.findOneAdmin(id);
+  }
+
   // ─── Mutación — solo admin / super_admin ─────────────────────────────────
 
   @Put(':id')
