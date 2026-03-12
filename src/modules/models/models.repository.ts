@@ -53,10 +53,8 @@ export class ModelsRepository {
 
     if (filters.active !== undefined) {
       where.active = filters.active;
-    } else {
-      // Endpoints públicos solo ven registros activos por defecto
-      where.active = true;
     }
+    // Removido el default.active = true para permitir que en el panel admin se listen todos si no se pasa nada
 
     if (filters.featured !== undefined) {
       where.featured = filters.featured;
@@ -102,6 +100,26 @@ export class ModelsRepository {
         brand: true,
         trims: {
           where: { active: true },
+          orderBy: { price: 'asc' },
+          include: {
+            spec: true,
+            _count: { select: { colors: true, images: true } },
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * findByIdAdminFull — Detalle admin completo.
+   * Incluye marca y todos los trims (activos e inactivos).
+   */
+  async findByIdAdminFull(id: number) {
+    return this.prisma.model.findUnique({
+      where: { id },
+      include: {
+        brand: true,
+        trims: {
           orderBy: { price: 'asc' },
           include: {
             spec: true,
