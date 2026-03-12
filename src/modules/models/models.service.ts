@@ -60,6 +60,14 @@ export class ModelsService {
     return model;
   }
 
+  async findBySlug(slug: string) {
+    const model = await this.modelsRepository.findBySlugPublic(slug);
+    if (!model) {
+      throw new NotFoundException(`Model with slug "${slug}" not found or is inactive`);
+    }
+    return model;
+  }
+
   async findOneAdmin(id: number) {
     const model = await this.modelsRepository.findByIdAdminFull(id);
     if (!model) {
@@ -120,7 +128,7 @@ export class ModelsService {
 
   /** Assert that a slug is not already taken; throws ConflictException. */
   private async assertSlugUnique(slug: string): Promise<void> {
-    const conflict = await this.modelsRepository.findBySlug(slug);
+    const conflict = await this.modelsRepository.findBySlugForValidation(slug);
     if (conflict) {
       throw new ConflictException(
         `Slug "${slug}" is already in use by Model #${conflict.id}`,

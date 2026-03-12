@@ -67,6 +67,16 @@ export class ModelsController {
     return this.modelsService.findAll(query);
   }
 
+  @Get('slug/:slug')
+  @Public()
+  @ApiOperation({ summary: 'Obtener modelo activo por slug (incluye marca, trims, spec, colores e imágenes)' })
+  @ApiParam({ name: 'slug', type: String })
+  @ApiResponse({ status: 200, description: 'Modelo encontrado' })
+  @ApiResponse({ status: 404, description: 'Modelo no encontrado o inactivo' })
+  findOneBySlug(@Param('slug') slug: string) {
+    return this.modelsService.findBySlug(slug);
+  }
+
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Obtener modelo activo por ID (incluye marca y trims activos)' })

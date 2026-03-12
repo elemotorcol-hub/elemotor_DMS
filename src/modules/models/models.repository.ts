@@ -20,6 +20,37 @@ export const MODEL_LIST_SELECT = {
     select: { id: true, name: true, slug: true, logoUrl: true },
   },
   _count: { select: { trims: true } },
+  // First active trim — provides specs and primary image for the public catalog card
+  trims: {
+    where: { active: true },
+    orderBy: { price: 'asc' as const },
+    take: 1,
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      status: true,
+      spec: {
+        select: {
+          batteryKwh: true,
+          rangeCltcKm: true,
+          rangeWltpKm: true,
+          horsepower: true,
+          zeroTo100: true,
+          topSpeed: true,
+        },
+      },
+      images: {
+        orderBy: { sortOrder: 'asc' as const },
+        take: 1,
+        select: {
+          url: true,
+          altText: true,
+          type: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.ModelSelect;
 
 /**
@@ -91,7 +122,7 @@ export class ModelsRepository {
 
   /**
    * findById — Detalle público (solo activos).
-   * Incluye marca y trims activos. Retorna null si no existe o inactivo.
+   * Incluye marca, trims activos con spec, colores e imágenes completos.
    */
   async findById(id: number) {
     return this.prisma.model.findFirst({
@@ -103,7 +134,31 @@ export class ModelsRepository {
           orderBy: { price: 'asc' },
           include: {
             spec: true,
-            _count: { select: { colors: true, images: true } },
+            colors: { orderBy: { type: 'asc' } },
+            images: { orderBy: { sortOrder: 'asc' } },
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * findBySlugPublic — Detalle público por slug (solo activos).
+   * Mismo resultado que findById pero resolviendo por el campo único `slug`.
+   * Usado por la página pública /modelos/[slug].
+   */
+  async findBySlugPublic(slug: string) {
+    return this.prisma.model.findFirst({
+      where: { slug, active: true },
+      include: {
+        brand: true,
+        trims: {
+          where: { active: true },
+          orderBy: { price: 'asc' },
+          include: {
+            spec: true,
+            colors: { orderBy: { type: 'asc' } },
+            images: { orderBy: { sortOrder: 'asc' } },
           },
         },
       },
@@ -141,8 +196,8 @@ export class ModelsRepository {
     });
   }
 
-  /** findBySlug — Busca por slug (para validar unicidad). */
-  async findBySlug(slug: string) {
+  /** findBySlugForValidation — Busca por slug solo para validar unicidad en create/update. */
+  async findBySlugForValidation(slug: string) {
     return this.prisma.model.findUnique({
       where: { slug },
       select: { id: true },
