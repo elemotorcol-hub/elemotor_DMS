@@ -9,7 +9,7 @@ import {
   IsArray,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ColorType, ImageType, Model3dFormat, LodLevel, TrimStatus } from '@prisma/client';
 
 export class NestedSpecDto {
@@ -122,6 +122,7 @@ export class NestedColorDto {
   name: string;
 
   @IsString()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace('#', '') : value)
   @MaxLength(6)
   hex_code: string;
 
