@@ -11,6 +11,8 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ModelType } from '@prisma/client';
 import { Type } from 'class-transformer';
+import { NestedTrimDto } from './nested-model.dto';
+import { ValidateNested } from 'class-validator';
 
 export class CreateModelDto {
   @ApiProperty({ example: 1, description: 'ID de la marca (brandId)' })
@@ -65,4 +67,10 @@ export class CreateModelDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @ApiPropertyOptional({ type: () => [NestedTrimDto] })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => NestedTrimDto)
+  trims?: NestedTrimDto[];
 }

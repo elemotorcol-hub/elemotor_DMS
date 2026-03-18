@@ -34,12 +34,12 @@ export class UploadService {
 
   /**
    * Sube una imagen (jpg | png | webp) a Cloudinary.
-   * Carpeta destino: elemotor/vehicles
+   * Carpeta destino: elemotor/vehicles (o la proporcionada en folderOverride)
    * Tamaño máximo: 5 MB
    */
-  async uploadImage(file: Express.Multer.File): Promise<UploadResultDto> {
+  async uploadImage(file: Express.Multer.File, folderOverride?: string): Promise<UploadResultDto> {
     validateFile(file, FileUploadType.IMAGE);
-    return this.streamToCloudinary(file, FileUploadType.IMAGE, 'image');
+    return this.streamToCloudinary(file, FileUploadType.IMAGE, 'image', folderOverride);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

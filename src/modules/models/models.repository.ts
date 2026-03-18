@@ -37,6 +37,37 @@ export const MODEL_LIST_SELECT = {
     },
   },
   _count: { select: { trims: true } },
+  // First active trim — provides specs and primary image for the public catalog card
+  trims: {
+    where: { active: true },
+    orderBy: { price: 'asc' as const },
+    take: 1,
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      status: true,
+      spec: {
+        select: {
+          batteryKwh: true,
+          rangeCltcKm: true,
+          rangeWltpKm: true,
+          horsepower: true,
+          zeroTo100: true,
+          topSpeed: true,
+        },
+      },
+      images: {
+        orderBy: { sortOrder: 'asc' as const },
+        take: 1,
+        select: {
+          url: true,
+          altText: true,
+          type: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.ModelSelect;
 
 /**
@@ -70,10 +101,8 @@ export class ModelsRepository {
 
     if (filters.active !== undefined) {
       where.active = filters.active;
-    } else {
-      // Endpoints públicos solo ven registros activos por defecto
-      where.active = true;
     }
+    // Removido el default.active = true para permitir que en el panel admin se listen todos si no se pasa nada
 
     if (filters.featured !== undefined) {
       where.featured = filters.featured;
@@ -110,7 +139,7 @@ export class ModelsRepository {
 
   /**
    * findById — Detalle público (solo activos).
-   * Incluye marca y trims activos. Retorna null si no existe o inactivo.
+   * Incluye marca, trims activos con spec, colores e imágenes completos.
    */
   async findById(id: number) {
     return this.prisma.model.findFirst({
@@ -119,6 +148,50 @@ export class ModelsRepository {
         brand: true,
         trims: {
           where: { active: true },
+          orderBy: { price: 'asc' },
+          include: {
+            spec: true,
+            colors: { orderBy: { type: 'asc' } },
+            images: { orderBy: { sortOrder: 'asc' } },
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * findBySlugPublic — Detalle público por slug (solo activos).
+   * Mismo resultado que findById pero resolviendo por el campo único `slug`.
+   * Usado por la página pública /modelos/[slug].
+   */
+  async findBySlugPublic(slug: string) {
+    return this.prisma.model.findFirst({
+      where: { slug, active: true },
+      include: {
+        brand: true,
+        trims: {
+          where: { active: true },
+          orderBy: { price: 'asc' },
+          include: {
+            spec: true,
+            colors: { orderBy: { type: 'asc' } },
+            images: { orderBy: { sortOrder: 'asc' } },
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * findByIdAdminFull — Detalle admin completo.
+   * Incluye marca y todos los trims (activos e inactivos).
+   */
+  async findByIdAdminFull(id: number) {
+    return this.prisma.model.findUnique({
+      where: { id },
+      include: {
+        brand: true,
+        trims: {
           orderBy: { price: 'asc' },
           include: {
             spec: true,
@@ -140,8 +213,8 @@ export class ModelsRepository {
     });
   }
 
-  /** findBySlug — Busca por slug (para validar unicidad). */
-  async findBySlug(slug: string) {
+  /** findBySlugForValidation — Busca por slug solo para validar unicidad en create/update. */
+  async findBySlugForValidation(slug: string) {
     return this.prisma.model.findUnique({
       where: { slug },
       select: { id: true },
@@ -161,14 +234,191 @@ export class ModelsRepository {
     return this.prisma.trim.count({ where: { modelId, active: true } });
   }
 
-  /** create */
+  /** create — Usa inserción anidada (Nested Writes) nativa de Prisma para evitar N+1 */
   async create(data: CreateModelDto) {
-    return this.prisma.model.create({ data });
+    const { brandId, trims, ...modelData } = data;
+
+    const createInput: Prisma.ModelCreateInput = {
+      ...modelData,
+      brand: { connect: { id: brandId } },
+    };
+
+    if (trims && trims.length > 0) {
+      createInput.trims = {
+        create: trims.map((t) => {
+          const trimInput: Prisma.TrimCreateWithoutModelInput = {
+            name: t.name,
+            price: t.price,
+            availableQuantity: t.available_quantity ?? 0,
+            status: t.status,
+            active: t.active ?? true,
+          };
+
+          if (t.specs && Object.keys(t.specs).length > 0) {
+            trimInput.spec = { create: { ...t.specs } };
+          }
+          if (t.colors && t.colors.length > 0) {
+            trimInput.colors = {
+              create: t.colors.map(c => ({
+                name: c.name,
+                hexCode: c.hex_code,
+                type: c.type,
+                imageUrl: c.image_url,
+                swatchUrl: c.swatch_url,
+              })),
+            };
+          }
+          if (t.images && t.images.length > 0) {
+            trimInput.images = {
+              create: t.images.map(img => ({
+                url: img.url,
+                publicId: img.publicId,
+                altText: img.alt_text,
+                type: img.type,
+                sortOrder: img.sort_order ?? 0,
+              })),
+            };
+          }
+          if (t.model_3d) {
+            trimInput.models3d = {
+              create: {
+                fileUrl: t.model_3d.file_url,
+                publicId: t.model_3d.publicId,
+                fileSizeMb: t.model_3d.file_size_mb,
+                format: t.model_3d.format,
+                dracoCompressed: t.model_3d.draco_compressed ?? true,
+                lodLevel: t.model_3d.lod_level,
+              },
+            };
+          }
+          return trimInput;
+        }),
+      };
+    }
+
+    return this.prisma.model.create({ data: createInput });
   }
 
-  /** update */
+  /** update — Resolución profunda con $transaction */
   async update(id: number, data: UpdateModelDto) {
-    return this.prisma.model.update({ where: { id }, data });
+    return this.prisma.$transaction(async (tx) => {
+      const { brandId, trims, ...modelData } = data;
+      
+      const model = await tx.model.update({
+        where: { id },
+        data: {
+          ...modelData,
+          ...(brandId !== undefined && { brand: { connect: { id: brandId } } }),
+        },
+      });
+
+      if (!trims) return model;
+
+      for (const t of trims) {
+        if (t.dbId && t._deleted) {
+          // Soft-delete o Hard-delete del trim. Asumimos hard-delete en cascada manual (limpiamos relaciones primero)
+          await tx.image.deleteMany({ where: { trimId: t.dbId } });
+          await tx.color.deleteMany({ where: { trimId: t.dbId } });
+          await tx.spec.deleteMany({ where: { trimId: t.dbId } });
+          await tx.model3d.deleteMany({ where: { trimId: t.dbId } });
+          await tx.trim.delete({ where: { id: t.dbId } });
+          continue;
+        }
+
+        let trimId = t.dbId;
+
+        if (!trimId) {
+          // Crear un Trim nuevo dentro de un Update (One-Shot)
+          const newTrim = await tx.trim.create({
+            data: {
+              modelId: id,
+              name: t.name,
+              price: t.price,
+              availableQuantity: t.available_quantity ?? 0,
+              status: t.status,
+              active: t.active ?? true,
+            },
+          });
+          trimId = newTrim.id;
+        } else {
+          // Actualizar trim existente
+          await tx.trim.update({
+            where: { id: trimId },
+            data: {
+              name: t.name,
+              price: t.price,
+              availableQuantity: t.available_quantity,
+              status: t.status,
+              active: t.active,
+            },
+          });
+        }
+
+        // --- Manejo de Specs ---
+        if (t.specs && Object.keys(t.specs).length > 0) {
+          const { dbId: specDbId, ...specData } = t.specs;
+          await tx.spec.upsert({
+            where: { trimId },
+            create: { trimId, ...specData },
+            update: { ...specData },
+          });
+        }
+
+        // --- Manejo de Colores ---
+        if (t.colors) {
+          for (const c of t.colors) {
+            if (c.dbId && c._deleted) {
+              await tx.color.delete({ where: { id: c.dbId } });
+            } else if (!c.dbId) {
+              await tx.color.create({
+                data: { trimId, name: c.name, hexCode: c.hex_code, type: c.type, imageUrl: c.image_url, swatchUrl: c.swatch_url },
+              });
+            } else {
+              await tx.color.update({
+                where: { id: c.dbId },
+                data: { name: c.name, hexCode: c.hex_code, type: c.type, imageUrl: c.image_url, swatchUrl: c.swatch_url },
+              });
+            }
+          }
+        }
+
+        // --- Manejo de Imágenes ---
+        if (t.images) {
+          for (const img of t.images) {
+            if (img.dbId && img._deleted) {
+              await tx.image.delete({ where: { id: img.dbId } });
+            } else if (!img.dbId) {
+              await tx.image.create({
+                data: { trimId, url: img.url, publicId: img.publicId, altText: img.alt_text, type: img.type, sortOrder: img.sort_order ?? 0 },
+              });
+            } else {
+              await tx.image.update({
+                where: { id: img.dbId },
+                data: { url: img.url, publicId: img.publicId, altText: img.alt_text, type: img.type, sortOrder: img.sort_order },
+              });
+            }
+          }
+        }
+
+        // --- Manejo del Modelo 3D ---
+        if (t.model_3d) {
+          if (t.model_3d.dbId && t.model_3d._deleted) {
+            await tx.model3d.delete({ where: { id: t.model_3d.dbId } });
+          } else if (!t.model_3d.dbId) {
+            await tx.model3d.create({
+              data: { trimId, fileUrl: t.model_3d.file_url, publicId: t.model_3d.publicId, format: t.model_3d.format, dracoCompressed: t.model_3d.draco_compressed ?? true, lodLevel: t.model_3d.lod_level },
+            });
+          } else {
+            await tx.model3d.update({
+              where: { id: t.model_3d.dbId },
+              data: { fileUrl: t.model_3d.file_url, publicId: t.model_3d.publicId, format: t.model_3d.format, dracoCompressed: t.model_3d.draco_compressed, lodLevel: t.model_3d.lod_level },
+            });
+          }
+        }
+      }
+
+      return model;
+    });
   }
 
   /** softDelete — Establece active = false (sin eliminación física). */

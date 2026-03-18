@@ -59,7 +59,13 @@ export class UploadController {
       },
     },
   })
-  @ApiOperation({ summary: 'Subir imagen de vehículo a Cloudinary' })
+  @ApiOperation({ summary: 'Subir imagen a Cloudinary (vehículos por defecto)' })
+  @ApiQuery({
+    name: 'folder',
+    required: false,
+    type: String,
+    description: 'Carpeta destino en subdirectorio de elemotor (ej: "brands"). Por defecto "elemotor/vehicles".',
+  })
   @ApiResponse({ status: 201, type: UploadResultDto, description: 'Imagen subida exitosamente.' })
   @ApiResponse({ status: 400, description: 'Formato o tamaño inválido.' })
   @ApiResponse({ status: 401, description: 'No autenticado.' })
@@ -67,8 +73,17 @@ export class UploadController {
   uploadImage(
     @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
     file: Express.Multer.File,
+    @Query('folder') folder?: string,
   ): Promise<UploadResultDto> {
-    return this.uploadService.uploadImage(file);
+    let folderOverride: string | undefined;
+    if (folder) {
+      // Validar input omitiendo caracteres peligrosos
+      const cleanFolder = folder.replace(/[^a-zA-Z0-9_\-]/g, '');
+      if (cleanFolder) {
+        folderOverride = `elemotor/${cleanFolder}`;
+      }
+    }
+    return this.uploadService.uploadImage(file, folderOverride);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
