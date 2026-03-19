@@ -34,37 +34,46 @@ export class WorkshopsRepository {
   }
 
   async findMany(filters: QueryWorkshopsDto) {
-    const { city, service_type, lat, lng, radius, page = 1, limit = 10 } = filters;
+    const { city, service_type, lat, lng, radius, page = 1, limit = 10, includeInactive = false } = filters;
     const skip = (page - 1) * limit;
 
     // Si hay búsqueda geográfica, usamos $queryRaw
     if (lat !== undefined && lng !== undefined && radius !== undefined) {
       // Haversine formula (6371 is Earth's radius in km)
       // MySQL uses radians. Decimal columns are cast to double.
-      const workshops = await this.prisma.$queryRaw<any[]>`
-        SELECT 
-          w.*,
+      const workshopsRaw = await this.prisma.$queryRaw<{id: number, distance: number}[]>`
+        SELECT w.id,
           (6371 * acos(
             cos(radians(${lat})) * cos(radians(latitude)) * 
             cos(radians(longitude) - radians(${lng})) + 
             sin(radians(${lat})) * sin(radians(latitude))
           )) AS distance
         FROM workshops w
-        WHERE w.active = true
+        WHERE 1=1
+        ${includeInactive ? Prisma.empty : Prisma.sql`AND w.active = true`}
         ${city ? Prisma.sql`AND w.city = ${city}` : Prisma.empty}
         HAVING distance <= ${radius}
         ORDER BY distance ASC
         LIMIT ${limit} OFFSET ${skip}
       `;
 
-      // Para los servicios y horas, necesitaremos hydrate o cargarlos por separado si es necesario
-      // pero por ahora devolvemos el listado base.
-      return workshops;
+      if (workshopsRaw.length === 0) return [];
+
+      const ids = workshopsRaw.map(w => Number(w.id));
+      const workshops = await this.prisma.workshop.findMany({
+        where: { id: { in: ids } },
+        include: { services: true, hours: true, images: true }
+      });
+
+      return workshopsRaw.map(raw => {
+        const w = workshops.find(workshop => workshop.id === Number(raw.id));
+        return { ...w, distance: Number(raw.distance) };
+      }) as unknown as any[];
     }
 
     // Búsqueda estándar con Prisma
     const where: Prisma.WorkshopWhereInput = {
-      active: true,
+      ...(includeInactive ? {} : { active: true }),
       city: city || undefined,
       services: service_type ? {
         some: { serviceType: service_type }
@@ -85,7 +94,7 @@ export class WorkshopsRepository {
   }
 
   async count(filters: QueryWorkshopsDto): Promise<number> {
-    const { city, service_type, lat, lng, radius } = filters;
+    const { city, service_type, lat, lng, radius, includeInactive = false } = filters;
 
     if (lat !== undefined && lng !== undefined && radius !== undefined) {
       const result = await this.prisma.$queryRaw<any[]>`
@@ -97,7 +106,8 @@ export class WorkshopsRepository {
               sin(radians(${lat})) * sin(radians(latitude))
             )) AS distance
           FROM workshops
-          WHERE active = true
+          WHERE 1=1
+          ${includeInactive ? Prisma.empty : Prisma.sql`AND active = true`}
           ${city ? Prisma.sql`AND city = ${city}` : Prisma.empty}
           HAVING distance <= ${radius}
         ) as sub
@@ -107,7 +117,7 @@ export class WorkshopsRepository {
 
     return this.prisma.workshop.count({
       where: {
-        active: true,
+        ...(includeInactive ? {} : { active: true }),
         city: city || undefined,
         services: service_type ? {
           some: { serviceType: service_type }
