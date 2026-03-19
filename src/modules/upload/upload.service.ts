@@ -16,6 +16,7 @@ const FOLDERS: Record<AssetType, string> = {
   image: 'elemotor/vehicles',
   model3d: 'elemotor/3d',
   document: 'elemotor/docs',
+  workshops: 'elemotor/workshops',
 };
 
 

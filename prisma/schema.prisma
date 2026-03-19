@@ -1,8 +1,3 @@
-// ============================================================
-// schema.prisma — elemotor_DMS
-// Provider: MySQL  |  ORM: Prisma 6
-// ============================================================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,9 +7,360 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================================
-// ENUMS
-// ============================================================
+model Brand {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  slug      String   @unique @db.VarChar(255)
+  logoUrl   String?  @map("logo_url") @db.VarChar(500)
+  country   String?  @db.VarChar(100)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  models    Model[]
+
+  @@map("brands")
+}
+
+model Model {
+  id          Int       @id @default(autoincrement())
+  brandId     Int       @map("brand_id")
+  name        String    @db.VarChar(255)
+  slug        String    @unique @db.VarChar(255)
+  type        ModelType
+  year        Int
+  description String?   @db.Text
+  basePrice   Decimal?  @map("base_price") @db.Decimal(15, 2)
+  featured    Boolean   @default(false)
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  brand       Brand     @relation(fields: [brandId], references: [id])
+  quotes      Quote[]
+  trims       Trim[]
+
+  @@index([brandId])
+  @@map("models")
+}
+
+model Trim {
+  id                Int        @id @default(autoincrement())
+  modelId           Int        @map("model_id")
+  name              String     @db.VarChar(255)
+  price             Decimal?   @db.Decimal(15, 2)
+  availableQuantity Int        @default(0) @map("available_quantity")
+  status            TrimStatus
+  active            Boolean    @default(true)
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  colors            Color[]
+  images            Image[]
+  models3d          Model3d?
+  orders            Order[]
+  quotes            Quote[]
+  spec              Spec?
+  model             Model      @relation(fields: [modelId], references: [id])
+
+  @@index([modelId])
+  @@map("trims")
+}
+
+model Spec {
+  id              Int      @id @default(autoincrement())
+  trimId          Int      @unique @map("trim_id")
+  batteryKwh      Decimal? @map("battery_kwh") @db.Decimal(8, 2)
+  rangeCltcKm     Int?     @map("range_cltc_km")
+  rangeWltpKm     Int?     @map("range_wltp_km")
+  horsepower      Int?
+  torque          Int?
+  zeroTo100       Decimal? @map("zero_to_100") @db.Decimal(5, 2)
+  topSpeed        Int?     @map("top_speed")
+  chargeTime3080  String?  @map("charge_time_30_80") @db.VarChar(100)
+  trunkLiters     Int?     @map("trunk_liters")
+  lengthMm        Int?     @map("length_mm")
+  widthMm         Int?     @map("width_mm")
+  heightMm        Int?     @map("height_mm")
+  wheelbaseMm     Int?     @map("wheelbase_mm")
+  curbWeightKg    Int?     @map("curb_weight_kg")
+  softwareVersion Int?     @map("software_version")
+  adasLevel       Int?     @map("adas_level")
+  screenSize      Int?     @map("screen_size")
+  kwhPer100km     Decimal? @map("kwh_per_100km") @db.Decimal(6, 2)
+  trim            Trim     @relation(fields: [trimId], references: [id])
+
+  @@map("specs")
+}
+
+model Color {
+  id        Int       @id @default(autoincrement())
+  trimId    Int       @map("trim_id")
+  name      String    @db.VarChar(255)
+  hexCode   String    @map("hex_code") @db.Char(6)
+  type      ColorType
+  imageUrl  String?   @map("image_url") @db.VarChar(500)
+  swatchUrl String?   @map("swatch_url") @db.VarChar(500)
+  trim      Trim      @relation(fields: [trimId], references: [id])
+  orders    Order[]
+
+  @@unique([trimId, name])
+  @@index([trimId])
+  @@map("colors")
+}
+
+model Image {
+  id        Int       @id @default(autoincrement())
+  trimId    Int       @map("trim_id")
+  url       String    @db.VarChar(500)
+  altText   String?   @map("alt_text") @db.VarChar(255)
+  type      ImageType
+  sortOrder Int       @default(0) @map("sort_order")
+  publicId  String    @map("public_id") @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at")
+  trim      Trim      @relation(fields: [trimId], references: [id])
+
+  @@unique([trimId, url])
+  @@index([trimId])
+  @@map("images")
+}
+
+model Model3d {
+  id              Int            @id @default(autoincrement())
+  trimId          Int            @unique @map("trim_id")
+  fileUrl         String         @map("file_url") @db.VarChar(500)
+  fileSizeMb      Decimal?       @map("file_size_mb") @db.Decimal(8, 2)
+  format          Model3dFormat?
+  dracoCompressed Boolean        @default(false) @map("draco_compressed")
+  lodLevel        LodLevel?      @map("lod_level")
+  publicId        String         @map("public_id") @db.VarChar(255)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  trim            Trim           @relation(fields: [trimId], references: [id])
+
+  @@index([trimId])
+  @@map("models_3d")
+}
+
+model User {
+  id                   Int                  @id @default(autoincrement())
+  name                 String               @db.VarChar(255)
+  email                String               @unique @db.VarChar(255)
+  phone                String?              @db.VarChar(50)
+  passwordHash         String?              @map("password_hash") @db.VarChar(255)
+  cedula               String?              @db.VarChar(50)
+  city                 String?              @db.VarChar(100)
+  role                 UserRole             @default(client)
+  googleId             String?              @map("google_id") @db.VarChar(255)
+  avatarUrl            String?              @map("avatar_url") @db.VarChar(500)
+  emailVerifiedAt      DateTime?            @map("email_verified_at")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  otpCode              String?              @map("otp_code") @db.VarChar(10)
+  otpExpiresAt         DateTime?            @map("otp_expires_at")
+  passwordResetExpires DateTime?            @map("password_reset_expires")
+  passwordResetToken   String?              @map("password_reset_token") @db.VarChar(255)
+  refreshToken         String?              @map("refresh_token") @db.VarChar(500)
+  documents            Document[]
+  statusHistoryUpdates OrderStatusHistory[] @relation("UpdatedBy")
+  orders               Order[]
+  assignedQuotes       Quote[]              @relation("QuoteAssignedTo")
+  quotes               Quote[]              @relation("QuoteUser")
+
+  @@map("users")
+}
+
+model Order {
+  id                Int                  @id @default(autoincrement())
+  userId            Int                  @map("user_id")
+  trimId            Int                  @map("trim_id")
+  colorId           Int                  @map("color_id")
+  trackingCode      String?              @unique @map("tracking_code") @db.VarChar(50)
+  status            OrderStatus
+  estimatedDelivery DateTime?            @map("estimated_delivery") @db.Date
+  vin               String?              @db.VarChar(17)
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  notes             String?              @db.Text
+  documents         Document[]
+  statusHistory     OrderStatusHistory[]
+  color             Color                @relation(fields: [colorId], references: [id])
+  trim              Trim                 @relation(fields: [trimId], references: [id])
+  user              User                 @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([trimId])
+  @@index([colorId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderStatusHistory {
+  id             Int          @id @default(autoincrement())
+  orderId        Int          @map("order_id")
+  status         OrderStatus
+  description    String?      @db.Text
+  date           DateTime     @default(now())
+  updatedById    Int?         @map("updated_by")
+  previousStatus OrderStatus? @map("previous_status")
+  order          Order        @relation(fields: [orderId], references: [id])
+  updatedBy      User?        @relation("UpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([orderId])
+  @@index([updatedById], map: "order_status_history_updated_by_fkey")
+  @@map("order_status_history")
+}
+
+/// Contador atómico por año para generar tracking codes ELE-YYYY-NNNNN sin colisiones.
+model TrackingCounter {
+  year    Int @id
+  lastSeq Int @default(0) @map("last_seq")
+
+  @@map("tracking_counters")
+}
+
+/// Contador atómico por año para generar reference codes COT-YYYY-NNNNN sin colisiones.
+model QuoteCounter {
+  year    Int @id
+  lastSeq Int @default(0) @map("last_seq")
+
+  @@map("quote_counters")
+}
+
+model Quote {
+  id               Int              @id @default(autoincrement())
+  userId           Int?             @map("user_id")
+  assignedToId     Int?             @map("assigned_to")
+  name             String           @db.VarChar(255)
+  email            String           @db.VarChar(255)
+  phone            String?          @db.VarChar(50)
+  city             String?          @db.VarChar(100)
+  modelId          Int?             @map("model_id")
+  trimId           Int?             @map("trim_id")
+  budgetRange      Decimal?         @map("budget_range") @db.Decimal(15, 2)
+  preferredChannel PreferredChannel @map("preferred_channel")
+  message          String?          @db.Text
+  notes            String?          @db.Text
+  source           String?          @db.VarChar(100)
+  referenceCode    String?          @unique @map("reference_code") @db.VarChar(50)
+  status           QuoteStatus      @default(pending)
+  utmSource        String?          @map("utm_source") @db.VarChar(100)
+  utmMedium        String?          @map("utm_medium") @db.VarChar(100)
+  utmCampaign      String?          @map("utm_campaign") @db.VarChar(100)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  assignedTo       User?            @relation("QuoteAssignedTo", fields: [assignedToId], references: [id])
+  model            Model?           @relation(fields: [modelId], references: [id])
+  trim             Trim?            @relation(fields: [trimId], references: [id])
+  user             User?            @relation("QuoteUser", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([assignedToId])
+  @@index([modelId])
+  @@index([trimId])
+  @@index([status])
+  @@index([source])
+  @@index([createdAt])
+  @@map("quotes")
+}
+
+model Document {
+  id         Int          @id @default(autoincrement())
+  orderId    Int          @map("order_id")
+  userId     Int          @map("user_id")
+  type       DocumentType
+  name       String       @db.VarChar(255)
+  fileUrl    String       @map("file_url") @db.VarChar(500)
+  uploadedBy UploadedBy   @map("uploaded_by")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  publicId   String?      @map("public_id") @db.VarChar(255)
+  order      Order        @relation(fields: [orderId], references: [id])
+  user       User         @relation(fields: [userId], references: [id])
+
+  @@index([orderId])
+  @@index([userId])
+  @@map("documents")
+}
+
+model Workshop {
+  id            Int               @id @default(autoincrement())
+  name          String            @db.VarChar(255)
+  address       String?           @db.VarChar(500)
+  city          String?           @db.VarChar(100)
+  state         String?           @db.VarChar(100)
+  latitude      Decimal?          @db.Decimal(10, 8)
+  longitude     Decimal?          @db.Decimal(11, 8)
+  phone         String?           @db.VarChar(50)
+  whatsapp      String?           @db.VarChar(50)
+  email         String?           @db.VarChar(255)
+  googleMapsUrl String?           @map("google_maps_url") @db.VarChar(500)
+  rating        Decimal?          @db.Decimal(2, 1)
+  description   String?           @db.Text
+  amenities     Json?
+  isVerified    Boolean           @default(true) @map("is_verified")
+  active        Boolean           @default(true)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  hours         WorkshopHour[]
+  images        WorkshopImage[]
+  services      WorkshopService[]
+
+  @@map("workshops")
+}
+
+model WorkshopService {
+  id          Int         @id @default(autoincrement())
+  workshopId  Int         @map("workshop_id")
+  serviceType ServiceType @map("service_type")
+  workshop    Workshop    @relation(fields: [workshopId], references: [id])
+
+  @@index([workshopId])
+  @@map("workshop_services")
+}
+
+model WorkshopHour {
+  id         Int      @id @default(autoincrement())
+  workshopId Int      @map("workshop_id")
+  dayOfWeek  Int      @map("day_of_week") @db.TinyInt
+  openTime   String?  @map("open_time") @db.VarChar(8)
+  closeTime  String?  @map("close_time") @db.VarChar(8)
+  isClosed   Boolean  @default(false) @map("is_closed")
+  workshop   Workshop @relation(fields: [workshopId], references: [id])
+
+  @@index([workshopId])
+  @@map("workshop_hours")
+}
+
+model WorkshopImage {
+  id         Int      @id @default(autoincrement())
+  workshopId Int      @map("workshop_id")
+  url        String   @db.VarChar(500)
+  altText    String?  @map("alt_text") @db.VarChar(255)
+  sortOrder  Int      @default(0) @map("sort_order")
+  publicId   String?  @map("public_id") @db.VarChar(255)
+  workshop   Workshop @relation(fields: [workshopId], references: [id])
+
+  @@index([workshopId])
+  @@map("workshop_images")
+}
+
+model ElectricityRate {
+  id             Int      @id @default(autoincrement())
+  city           String   @db.VarChar(100)
+  pricePerKwhCop Decimal  @map("price_per_kwh_cop") @db.Decimal(10, 2)
+  source         String?  @db.VarChar(255)
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("electricity_rates")
+}
+
+model FuelPrice {
+  id                Int      @id @default(autoincrement())
+  city              String   @db.VarChar(100)
+  fuelType          FuelType @map("fuel_type")
+  pricePerGallonCop Decimal  @map("price_per_gallon_cop") @db.Decimal(10, 2)
+  source            String?  @db.VarChar(255)
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("fuel_prices")
+}
 
 enum ModelType {
   SUV
@@ -103,393 +449,11 @@ enum ServiceType {
   body_paint
   electric_diagnostics
   tires
+  brakes
+  general
 }
 
 enum FuelType {
   regular
   premium
-}
-
-// ============================================================
-// CATÁLOGO — brands, models, trims, specs, colors, images, models_3d
-// ============================================================
-
-model Brand {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(255)
-  slug      String   @unique @db.VarChar(255)
-  logoUrl   String?  @map("logo_url") @db.VarChar(500)
-  country   String?  @db.VarChar(100)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  models Model[]
-
-  @@map("brands")
-}
-
-model Model {
-  id          Int       @id @default(autoincrement())
-  brandId     Int       @map("brand_id")
-  name        String    @db.VarChar(255)
-  slug        String    @unique @db.VarChar(255)
-  type        ModelType
-  year        Int
-  description String?   @db.Text
-  basePrice   Decimal?  @map("base_price") @db.Decimal(15, 2)
-  featured    Boolean   @default(false)
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  brand  Brand   @relation(fields: [brandId], references: [id])
-  trims  Trim[]
-  quotes Quote[]
-
-  @@index([brandId])
-  @@map("models")
-}
-
-model Trim {
-  id                Int        @id @default(autoincrement())
-  modelId           Int        @map("model_id")
-  name              String     @db.VarChar(255)
-  price             Decimal?   @db.Decimal(15, 2)
-  availableQuantity Int        @default(0) @map("available_quantity")
-  status            TrimStatus
-  active            Boolean    @default(true)
-  createdAt         DateTime   @default(now()) @map("created_at")
-  updatedAt         DateTime   @updatedAt @map("updated_at")
-
-  model    Model     @relation(fields: [modelId], references: [id])
-  spec     Spec?
-  colors   Color[]
-  images   Image[]
-  models3d Model3d[]
-  orders   Order[]
-  quotes   Quote[]
-
-  @@index([modelId])
-  @@map("trims")
-}
-
-model Spec {
-  id              Int      @id @default(autoincrement())
-  trimId          Int      @unique @map("trim_id")
-  batteryKwh      Decimal? @map("battery_kwh") @db.Decimal(8, 2)
-  rangeCltcKm     Int?     @map("range_cltc_km")
-  rangeWltpKm     Int?     @map("range_wltp_km")
-  horsepower      Int?
-  torque          Int?
-  zeroTo100       Decimal? @map("zero_to_100") @db.Decimal(5, 2)
-  topSpeed        Int?     @map("top_speed")
-  chargeTime3080  String?  @map("charge_time_30_80") @db.VarChar(100)
-  trunkLiters     Int?     @map("trunk_liters")
-  lengthMm        Int?     @map("length_mm")
-  widthMm         Int?     @map("width_mm")
-  heightMm        Int?     @map("height_mm")
-  wheelbaseMm     Int?     @map("wheelbase_mm")
-  curbWeightKg    Int?     @map("curb_weight_kg")
-  softwareVersion Int?     @map("software_version")
-  adasLevel       Int?     @map("adas_level")
-  screenSize      Int?     @map("screen_size")
-  kwhPer100km     Decimal? @map("kwh_per_100km") @db.Decimal(6, 2)
-
-  trim Trim @relation(fields: [trimId], references: [id])
-
-  @@map("specs")
-}
-
-model Color {
-  id        Int       @id @default(autoincrement())
-  trimId    Int       @map("trim_id")
-  name      String    @db.VarChar(255)
-  hexCode   String    @map("hex_code") @db.Char(6)
-  type      ColorType
-  imageUrl  String?   @map("image_url") @db.VarChar(500)
-  swatchUrl String?   @map("swatch_url") @db.VarChar(500)
-
-  trim   Trim    @relation(fields: [trimId], references: [id])
-  orders Order[]
-
-  @@unique([trimId, name])
-  @@index([trimId])
-  @@map("colors")
-}
-
-model Image {
-  id        Int       @id @default(autoincrement())
-  trimId    Int       @map("trim_id")
-  url       String    @db.VarChar(500)
-  publicId  String    @map("public_id") @db.VarChar(255)
-  altText   String?   @map("alt_text") @db.VarChar(255)
-  type      ImageType
-  sortOrder Int       @default(0) @map("sort_order")
-  createdAt DateTime  @default(now()) @map("created_at")
-
-  trim Trim @relation(fields: [trimId], references: [id])
-
-  @@unique([trimId, url])
-  @@index([trimId])
-  @@map("images")
-}
-
-model Model3d {
-  id              Int            @id @default(autoincrement())
-  trimId          Int            @unique @map("trim_id")
-  fileUrl         String         @map("file_url") @db.VarChar(500)
-  publicId        String         @map("public_id") @db.VarChar(255)
-  fileSizeMb      Decimal?       @map("file_size_mb") @db.Decimal(8, 2)
-  format          Model3dFormat?
-  dracoCompressed Boolean        @default(false) @map("draco_compressed")
-  lodLevel        LodLevel?      @map("lod_level")
-  createdAt       DateTime       @default(now()) @map("created_at")
-
-  trim Trim @relation(fields: [trimId], references: [id])
-
-  @@map("models_3d")
-}
-
-// ============================================================
-// USUARIOS Y PEDIDOS — users, orders, order_status_history, quotes, documents
-// ============================================================
-
-model User {
-  id              Int       @id @default(autoincrement())
-  name            String    @db.VarChar(255)
-  email           String    @unique @db.VarChar(255)
-  phone           String?   @db.VarChar(50)
-  passwordHash    String?   @map("password_hash") @db.VarChar(255)
-  cedula          String?   @db.VarChar(50)
-  city            String?   @db.VarChar(100)
-  role            UserRole  @default(client)
-  googleId        String?   @map("google_id") @db.VarChar(255)
-  avatarUrl       String?   @map("avatar_url") @db.VarChar(500)
-  emailVerifiedAt DateTime? @map("email_verified_at")
-
-  // ── Auth tokens ──────────────────────────────────────────────
-  refreshToken         String?   @map("refresh_token") @db.VarChar(500)
-  otpCode              String?   @map("otp_code") @db.VarChar(10)
-  otpExpiresAt         DateTime? @map("otp_expires_at")
-  passwordResetToken   String?   @map("password_reset_token") @db.VarChar(255)
-  passwordResetExpires DateTime? @map("password_reset_expires")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  orders               Order[]
-  statusHistoryUpdates OrderStatusHistory[] @relation("UpdatedBy")
-  quotes               Quote[]              @relation("QuoteUser")
-  assignedQuotes       Quote[]              @relation("QuoteAssignedTo")
-  documents            Document[]
-
-  @@map("users")
-}
-
-model Order {
-  id                Int         @id @default(autoincrement())
-  userId            Int         @map("user_id")
-  trimId            Int         @map("trim_id")
-  colorId           Int         @map("color_id")
-  trackingCode      String?     @unique @map("tracking_code") @db.VarChar(50)
-  status            OrderStatus
-  estimatedDelivery DateTime?   @map("estimated_delivery") @db.Date
-  vin               String?     @db.VarChar(17)
-  notes             String?     @db.Text
-  createdAt         DateTime    @default(now()) @map("created_at")
-  updatedAt         DateTime    @updatedAt @map("updated_at")
-
-  user          User                 @relation(fields: [userId], references: [id])
-  trim          Trim                 @relation(fields: [trimId], references: [id])
-  color         Color                @relation(fields: [colorId], references: [id])
-  statusHistory OrderStatusHistory[]
-  documents     Document[]
-
-  @@index([userId])
-  @@index([trimId])
-  @@index([colorId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("orders")
-}
-
-model OrderStatusHistory {
-  id             Int          @id @default(autoincrement())
-  orderId        Int          @map("order_id")
-  previousStatus OrderStatus? @map("previous_status")
-  status         OrderStatus
-  description    String?      @db.Text
-  date           DateTime     @default(now())
-  updatedById    Int?         @map("updated_by")
-
-  order     Order @relation(fields: [orderId], references: [id])
-  updatedBy User? @relation("UpdatedBy", fields: [updatedById], references: [id])
-
-  @@index([orderId])
-  @@map("order_status_history")
-}
-
-/// Contador atómico por año para generar tracking codes ELE-YYYY-NNNNN sin colisiones.
-model TrackingCounter {
-  year    Int @id
-  lastSeq Int @default(0) @map("last_seq")
-
-  @@map("tracking_counters")
-}
-
-/// Contador atómico por año para generar reference codes COT-YYYY-NNNNN sin colisiones.
-model QuoteCounter {
-  year    Int @id
-  lastSeq Int @default(0) @map("last_seq")
-
-  @@map("quote_counters")
-}
-
-model Quote {
-  id               Int              @id @default(autoincrement())
-  userId           Int?             @map("user_id")
-  assignedToId     Int?             @map("assigned_to")
-  name             String           @db.VarChar(255)
-  email            String           @db.VarChar(255)
-  phone            String?          @db.VarChar(50)
-  city             String?          @db.VarChar(100)
-  modelId          Int?             @map("model_id")
-  trimId           Int?             @map("trim_id")
-  budgetRange      Decimal?         @map("budget_range") @db.Decimal(15, 2)
-  preferredChannel PreferredChannel @map("preferred_channel")
-  message          String?          @db.Text
-  notes            String?          @db.Text
-  source           String?          @db.VarChar(100)
-  referenceCode    String?          @unique @map("reference_code") @db.VarChar(50)
-  status           QuoteStatus      @default(pending)
-  utmSource        String?          @map("utm_source") @db.VarChar(100)
-  utmMedium        String?          @map("utm_medium") @db.VarChar(100)
-  utmCampaign      String?          @map("utm_campaign") @db.VarChar(100)
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-
-  user       User?  @relation("QuoteUser", fields: [userId], references: [id])
-  assignedTo User?  @relation("QuoteAssignedTo", fields: [assignedToId], references: [id])
-  model      Model? @relation(fields: [modelId], references: [id])
-  trim       Trim?  @relation(fields: [trimId], references: [id])
-
-  @@index([userId])
-  @@index([assignedToId])
-  @@index([modelId])
-  @@index([trimId])
-  @@index([status])
-  @@index([source])
-  @@index([createdAt])
-  @@map("quotes")
-}
-
-model Document {
-  id         Int          @id @default(autoincrement())
-  orderId    Int          @map("order_id")
-  userId     Int          @map("user_id")
-  type       DocumentType
-  name       String       @db.VarChar(255)
-  fileUrl    String       @map("file_url") @db.VarChar(500)
-  publicId   String?      @map("public_id") @db.VarChar(255)
-  uploadedBy UploadedBy   @map("uploaded_by")
-  createdAt  DateTime     @default(now()) @map("created_at")
-
-  order Order @relation(fields: [orderId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
-
-  @@index([orderId])
-  @@index([userId])
-  @@map("documents")
-}
-
-// ============================================================
-// TALLERES — workshops, workshop_services, workshop_hours, workshop_images
-// ============================================================
-
-model Workshop {
-  id            Int      @id @default(autoincrement())
-  name          String   @db.VarChar(255)
-  address       String?  @db.VarChar(500)
-  city          String?  @db.VarChar(100)
-  state         String?  @db.VarChar(100)
-  latitude      Decimal? @db.Decimal(10, 8)
-  longitude     Decimal? @db.Decimal(11, 8)
-  phone         String?  @db.VarChar(50)
-  whatsapp      String?  @db.VarChar(50)
-  email         String?  @db.VarChar(255)
-  googleMapsUrl String?  @map("google_maps_url") @db.VarChar(500)
-  rating        Decimal? @db.Decimal(2, 1)
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  services WorkshopService[]
-  hours    WorkshopHour[]
-  images   WorkshopImage[]
-
-  @@map("workshops")
-}
-
-model WorkshopService {
-  id          Int         @id @default(autoincrement())
-  workshopId  Int         @map("workshop_id")
-  serviceType ServiceType @map("service_type")
-
-  workshop Workshop @relation(fields: [workshopId], references: [id])
-
-  @@index([workshopId])
-  @@map("workshop_services")
-}
-
-model WorkshopHour {
-  id         Int     @id @default(autoincrement())
-  workshopId Int     @map("workshop_id")
-  dayOfWeek  Int     @map("day_of_week") @db.TinyInt
-  openTime   String? @map("open_time") @db.VarChar(8)
-  closeTime  String? @map("close_time") @db.VarChar(8)
-  isClosed   Boolean @default(false) @map("is_closed")
-
-  workshop Workshop @relation(fields: [workshopId], references: [id])
-
-  @@index([workshopId])
-  @@map("workshop_hours")
-}
-
-model WorkshopImage {
-  id         Int     @id @default(autoincrement())
-  workshopId Int     @map("workshop_id")
-  url        String  @db.VarChar(500)
-  altText    String? @map("alt_text") @db.VarChar(255)
-  sortOrder  Int     @default(0) @map("sort_order")
-
-  workshop Workshop @relation(fields: [workshopId], references: [id])
-
-  @@index([workshopId])
-  @@map("workshop_images")
-}
-
-// ============================================================
-// CALCULADORA — electricity_rates, fuel_prices
-// ============================================================
-
-model ElectricityRate {
-  id             Int      @id @default(autoincrement())
-  city           String   @db.VarChar(100)
-  pricePerKwhCop Decimal  @map("price_per_kwh_cop") @db.Decimal(10, 2)
-  source         String?  @db.VarChar(255)
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  @@map("electricity_rates")
-}
-
-model FuelPrice {
-  id                Int      @id @default(autoincrement())
-  city              String   @db.VarChar(100)
-  fuelType          FuelType @map("fuel_type")
-  pricePerGallonCop Decimal  @map("price_per_gallon_cop") @db.Decimal(10, 2)
-  source            String?  @db.VarChar(255)
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  @@map("fuel_prices")
 }

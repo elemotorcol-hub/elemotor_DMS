@@ -8,7 +8,7 @@ export enum FileUploadType {
   DOCUMENT = 'document',
 }
 
-export type AssetType = FileUploadType;
+export type AssetType = FileUploadType | 'workshops';
 
 // ─── Configuración de restricciones por tipo ──────────────────────────────────
 interface AssetConstraints {
@@ -39,6 +39,12 @@ const CONSTRAINTS: Record<AssetType, AssetConstraints> = {
     allowedExtensions: ['pdf'],
     maxSizeBytes: 10 * 1024 * 1024, // 10 MB
     label: 'Documento',
+  },
+  workshops: {
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+    maxSizeBytes: 5 * 1024 * 1024, // 5 MB
+    label: 'Imagen de Taller',
   },
 };
 
