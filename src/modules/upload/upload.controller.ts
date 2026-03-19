@@ -45,7 +45,7 @@ export class UploadController {
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(
     FileInterceptor('file', {
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB — primera línea de defensa
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB — primera línea de defensa
     }),
   )
   @ApiConsumes('multipart/form-data')

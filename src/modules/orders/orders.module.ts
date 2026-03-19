@@ -21,5 +21,6 @@ import { OrdersWebhookService } from './webhook/orders-webhook.service';
 @Module({
   controllers: [OrdersController],
   providers: [OrdersService, OrdersRepository, OrdersWebhookService],
+  exports: [OrdersRepository],
 })
 export class OrdersModule {}

@@ -39,9 +39,9 @@ CREATE TABLE IF NOT EXISTS `quote_counters` (
 
 -- STEP 5: Add new columns to quotes
 ALTER TABLE `quotes`
-  ADD COLUMN IF NOT EXISTS `assigned_to`  INT          NULL AFTER `user_id`,
-  ADD COLUMN IF NOT EXISTS `notes`        TEXT         NULL AFTER `message`,
-  ADD COLUMN IF NOT EXISTS `source`       VARCHAR(100) NULL AFTER `notes`;
+  ADD COLUMN `assigned_to`  INT          NULL AFTER `user_id`,
+  ADD COLUMN `notes`        TEXT         NULL AFTER `message`,
+  ADD COLUMN `source`       VARCHAR(100) NULL AFTER `notes`;
 
 -- STEP 6: Add foreign key for assigned_to → users
 ALTER TABLE `quotes`

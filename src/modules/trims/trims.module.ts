@@ -6,6 +6,6 @@ import { TrimsRepository } from './trims.repository';
 @Module({
   controllers: [TrimsController],
   providers: [TrimsService, TrimsRepository],
-  exports: [TrimsService],
+  exports: [TrimsService, TrimsRepository],
 })
 export class TrimsModule {}

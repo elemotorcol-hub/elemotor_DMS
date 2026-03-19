@@ -21,6 +21,8 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { UsersModule } from './modules/users/users.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { WorkshopsModule } from './modules/workshops/workshops.module';
 
 /**
  * AppModule — Módulo raíz de la aplicación
@@ -42,6 +44,9 @@ import { DocumentsModule } from './modules/documents/documents.module';
  * - UsersModule:    Gestión de usuarios y roles
  * - DocumentsModule: Gestión de documentos vinculados a pedidos
  */
+// ── Configuración / Calculadora ─────────────────────────
+import { CalculatorSettingsModule } from './modules/calculator-settings/calculator-settings.module';
+
 @Module({
   imports: [
     // Variables de entorno disponibles globalmente en toda la app
@@ -81,6 +86,15 @@ import { DocumentsModule } from './modules/documents/documents.module';
 
     // Cotizaciones / Leads
     QuotesModule,
+
+    // Variables de sistema y tarifas
+    CalculatorSettingsModule,
+
+    // Dashboard administrativo
+    DashboardModule,
+
+    // Talleres Aliados
+    WorkshopsModule,
   ],
   providers: [
     // Guards globales: JwtAuthGuard + RolesGuard aplicados a TODOS los endpoints
