@@ -154,6 +154,19 @@ export class OrdersController {
   // ══════════════════════════════════════════════════════════════════════════
 
   /**
+   * GET /api/orders/my-vehicle
+   * Retorna el vehículo del usuario actual estructurado para el dashboard.
+   */
+  @Get('my-vehicle')
+  @ApiOperation({ summary: '[Cliente] Obtener el vehículo principal del usuario' })
+  @ApiResponse({ status: 200, description: 'Vehículo actual del usuario' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 404, description: 'Sin vehículos' })
+  findMyVehicle(@Req() req: AuthRequest) {
+    return this.ordersService.findMyVehicle(req.user.sub);
+  }
+
+  /**
    * GET /api/orders/my
    * Retorna los pedidos del usuario autenticado con último estado.
    */

@@ -52,6 +52,39 @@ export const ORDER_MY_LIST_SELECT = {
 } satisfies Prisma.OrderSelect;
 
 /**
+ * ORDER_MY_VEHICLE_SELECT — Datos completos del vehículo para el cliente.
+ * Incluye especificaciones técnicas y la imagen principal (hero).
+ */
+export const ORDER_MY_VEHICLE_SELECT = {
+  id: true,
+  trackingCode: true,
+  status: true,
+  vin: true,
+  estimatedDelivery: true,
+  createdAt: true,
+  trim: {
+    select: {
+      id: true,
+      name: true,
+      spec: true,
+      images: {
+        orderBy: { sortOrder: 'asc' },
+        select: { url: true },
+      },
+      model: {
+        select: {
+          id: true,
+          name: true,
+          year: true,
+          brand: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+  color: { select: { id: true, name: true, hexCode: true } },
+} satisfies Prisma.OrderSelect;
+
+/**
  * ORDER_MY_DETAIL_SELECT — Detalle de un pedido del cliente.
  * Incluye historial completo de estados ordenado cronológicamente.
  */
@@ -271,6 +304,28 @@ export class OrdersRepository {
     return this.prisma.order.findFirst({
       where: { id, userId },
       select: ORDER_MY_DETAIL_SELECT,
+    });
+  }
+
+  /** findMyVehicle — Obtiene el vehículo más reciente del cliente con especificaciones completas. */
+  async findMyVehicle(userId: number) {
+    return this.prisma.order.findFirst({
+      where: { 
+        userId,
+        status: {
+          in: [
+            OrderStatus.confirmed,
+            OrderStatus.port_origin,
+            OrderStatus.transit,
+            OrderStatus.customs,
+            OrderStatus.nationalization,
+            OrderStatus.ready,
+            OrderStatus.delivered
+          ]
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      select: ORDER_MY_VEHICLE_SELECT,
     });
   }
 
