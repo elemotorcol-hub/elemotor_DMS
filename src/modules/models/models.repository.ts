@@ -19,23 +19,6 @@ export const MODEL_LIST_SELECT = {
   brand: {
     select: { id: true, name: true, slug: true, logoUrl: true },
   },
-  trims: {
-    where: { active: true },
-    orderBy: { price: 'asc' },
-    take: 1,
-    select: {
-      id: true,
-      name: true,
-      price: true,
-      status: true,
-      spec: { select: { batteryKwh: true, rangeCltcKm: true, rangeWltpKm: true, zeroTo100: true, topSpeed: true, horsepower: true } },
-      images: {
-        orderBy: { sortOrder: 'asc' },
-        take: 1,
-        select: { url: true, altText: true, type: true },
-      },
-    },
-  },
   _count: { select: { trims: true } },
   // First active trim — provides specs and primary image for the public catalog card
   trims: {
