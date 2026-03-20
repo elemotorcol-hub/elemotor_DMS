@@ -157,4 +157,12 @@ export class OrdersService {
     }
     return vehicle;
   }
+
+  /**
+   * getDeliveredOrder — Retorna el pedido entregado del cliente con la fecha de entrega.
+   * Retorna null si el usuario no tiene un pedido en estado "delivered".
+   */
+  async getDeliveredOrder(userId: number) {
+    return this.ordersRepository.findDeliveredOrder(userId);
+  }
 }

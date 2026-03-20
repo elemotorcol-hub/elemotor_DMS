@@ -34,7 +34,7 @@ export class WorkshopsRepository {
   }
 
   async findMany(filters: QueryWorkshopsDto) {
-    const { city, service_type, lat, lng, radius, page = 1, limit = 10, includeInactive = false } = filters;
+    const { city, service_type, lat, lng, radius, page = 1, limit = 10, includeInactive = false, sortBy } = filters;
     const skip = (page - 1) * limit;
 
     // Si hay búsqueda geográfica, usamos $queryRaw
@@ -53,7 +53,7 @@ export class WorkshopsRepository {
         ${includeInactive ? Prisma.empty : Prisma.sql`AND w.active = true`}
         ${city ? Prisma.sql`AND w.city = ${city}` : Prisma.empty}
         HAVING distance <= ${radius}
-        ORDER BY distance ASC
+        ${sortBy === 'rating_desc' ? Prisma.sql`ORDER BY w.rating DESC` : Prisma.sql`ORDER BY distance ASC`}
         LIMIT ${limit} OFFSET ${skip}
       `;
 
@@ -89,7 +89,7 @@ export class WorkshopsRepository {
         hours: true,
         images: true
       },
-      orderBy: { name: 'asc' }
+      orderBy: sortBy === 'rating_desc' ? { rating: 'desc' } : { name: 'asc' }
     });
   }
 

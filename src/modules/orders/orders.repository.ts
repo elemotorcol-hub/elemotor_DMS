@@ -307,6 +307,39 @@ export class OrdersRepository {
     });
   }
 
+  /**
+   * findDeliveredOrder — Busca el pedido más reciente del usuario con estado "delivered".
+   * Deriva la fecha de entrega desde el historial de estados (entrada donde status = delivered).
+   */
+  async findDeliveredOrder(userId: number) {
+    const order = await this.prisma.order.findFirst({
+      where: { userId, status: OrderStatus.delivered },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        trackingCode: true,
+        statusHistory: {
+          where: { status: OrderStatus.delivered },
+          orderBy: { date: 'desc' },
+          take: 1,
+          select: { date: true },
+        },
+      },
+    });
+
+    if (!order) return null;
+
+    const deliveredAt = order.statusHistory[0]?.date ?? null;
+
+    return {
+      orderId: order.id,
+      status: order.status,
+      trackingCode: order.trackingCode,
+      deliveredAt: deliveredAt ? deliveredAt.toISOString() : null,
+    };
+  }
+
   /** findMyVehicle — Obtiene el vehículo más reciente del cliente con especificaciones completas. */
   async findMyVehicle(userId: number) {
     return this.prisma.order.findFirst({
