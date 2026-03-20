@@ -83,7 +83,8 @@ export class UploadService {
     type: FileUploadType.MODEL_3D | FileUploadType.DOCUMENT,
   ): Promise<UploadResultDto> {
     validateFile(file, type);
-    return this.streamToCloudinary(file, type, 'raw');
+    const resourceType = type === FileUploadType.DOCUMENT ? 'image' : 'raw';
+    return this.streamToCloudinary(file, type, resourceType);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
