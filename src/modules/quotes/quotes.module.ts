@@ -1,8 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { QuotesController } from './quotes.controller';
 import { QuotesService } from './quotes.service';
 import { QuotesRepository } from './quotes.repository';
 import { QuotesWebhookService } from './webhook/quotes-webhook.service';
+import { UsersModule } from '../users/users.module';
+import { OrdersModule } from '../orders/orders.module';
 
 /**
  * QuotesModule — Gestión de cotizaciones y leads.
@@ -18,6 +20,7 @@ import { QuotesWebhookService } from './webhook/quotes-webhook.service';
  * PrismaModule and ConfigModule are global → no need to import them here.
  */
 @Module({
+  imports: [UsersModule, forwardRef(() => OrdersModule)],
   controllers: [QuotesController],
   providers: [QuotesService, QuotesRepository, QuotesWebhookService],
   exports: [QuotesRepository],

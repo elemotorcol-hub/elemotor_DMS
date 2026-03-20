@@ -85,6 +85,31 @@ export const ORDER_MY_DETAIL_SELECT = {
   },
 } satisfies Prisma.OrderSelect;
 
+/** Selección mínima para el rastreo público de pedidos registrados. */
+export const ORDER_PUBLIC_DETAIL_SELECT = {
+  id: true,
+  trackingCode: true,
+  status: true,
+  vin: true,
+  userId: true,
+  estimatedDelivery: true,
+  trim: {
+    select: {
+      name: true,
+      model: { select: { name: true, brand: { select: { name: true } } } },
+    },
+  },
+  color: { select: { name: true, hexCode: true } },
+  statusHistory: {
+    orderBy: { date: 'asc' as const },
+    select: {
+      status: true,
+      description: true,
+      date: true,
+    },
+  },
+} satisfies Prisma.OrderSelect;
+
 /**
  * OrdersRepository
  *
@@ -143,7 +168,7 @@ export class OrdersRepository {
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
         data: {
-          userId: dto.userId,
+          userId: dto.userId ?? createdByAdminId,
           trimId: dto.trimId,
           colorId: dto.colorId,
           trackingCode,
@@ -270,7 +295,58 @@ export class OrdersRepository {
   async findByIdAndUserId(id: number, userId: number) {
     return this.prisma.order.findFirst({
       where: { id, userId },
+  select: ORDER_MY_DETAIL_SELECT,
+    });
+  }
+
+  /**
+   * findPublicDetail — Retorna detalles básicos para rastreo por código solamente.
+   */
+  async findPublicDetail(trackingCode: string) {
+    return this.prisma.order.findUnique({
+      where: { trackingCode },
+      select: ORDER_PUBLIC_DETAIL_SELECT,
+    });
+  }
+
+  /**
+   * findByTrackingCode — Busca un pedido y valida la identidad del usuario.
+   * Usado para rastreo público de pedidos ya asignados a un cliente.
+   * Localiza el pedido por trackingCode y verifica identidad
+   * comparando el campo `identity` contra el email o cédula del usuario.
+   * No expone datos privados del usuario en el resultado.
+   */
+  async findByTrackingCode(trackingCode: string, identity: string) {
+    // MySQL collation is case-insensitive by default; pre-normalize in app layer.
+    const normalizedCode = trackingCode.trim().toUpperCase();
+    const normalizedIdentity = identity.toLowerCase().trim();
+    return this.prisma.order.findFirst({
+      where: {
+        trackingCode: normalizedCode,
+        user: {
+          OR: [
+            { email: normalizedIdentity },
+            { cedula: normalizedIdentity },
+          ],
+        },
+      },
       select: ORDER_MY_DETAIL_SELECT,
+    });
+  }
+
+  /** findByTrackingCodeOnly — Búsqueda interna para vinculación de pedidos. */
+  async findByTrackingCodeOnly(trackingCode: string) {
+    return this.prisma.order.findUnique({
+      where: { trackingCode: trackingCode.trim().toUpperCase() },
+      select: { id: true, userId: true },
+    });
+  }
+
+  /** assignToUserId — Vincula un pedido a un usuario específico. */
+  async assignToUserId(orderId: number, userId: number) {
+    return this.prisma.order.update({
+      where: { id: orderId },
+      data: { userId },
     });
   }
 

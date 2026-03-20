@@ -14,11 +14,12 @@ import { Type } from 'class-transformer';
 const VIN_REGEX = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
 export class CreateOrderDto {
-  @ApiProperty({ example: 3, description: 'ID del usuario cliente' })
+  @ApiPropertyOptional({ example: 3, description: 'ID del usuario cliente (opcional)' })
+  @IsOptional()
   @IsInt()
   @IsPositive()
   @Type(() => Number)
-  userId: number;
+  userId?: number;
 
   @ApiProperty({ example: 1, description: 'ID del trim (versión) del vehículo' })
   @IsInt()
@@ -57,4 +58,12 @@ export class CreateOrderDto {
   @IsOptional()
   @IsDateString()
   estimatedDelivery?: string;
+
+  @ApiPropertyOptional({
+    example: 'COT-2026-00001',
+    description: 'Código de seguimiento personalizado (opcional, p.ej. para reusar código de cotización)',
+  })
+  @IsOptional()
+  @IsString()
+  trackingCode?: string;
 }

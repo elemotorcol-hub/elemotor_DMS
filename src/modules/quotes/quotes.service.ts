@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { QuotesRepository } from './quotes.repository';
 import { QuotesWebhookService } from './webhook/quotes-webhook.service';
+import { UsersRepository } from '../users/users.repository';
+import { OrdersRepository } from '../orders/orders.repository';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { QueryQuoteDto } from './dto/query-quote.dto';
@@ -19,47 +21,76 @@ export class QuotesService {
   constructor(
     private readonly quotesRepository: QuotesRepository,
     private readonly webhookService: QuotesWebhookService,
+    private readonly usersRepository: UsersRepository,
+    private readonly ordersRepository: OrdersRepository,
   ) {}
 
   // ─── Public: Create quote ─────────────────────────────────────────────────
 
   /**
    * create — Generates COT-YYYY-NNNNN atomically, persists the quote,
-   * then fires a fire-and-forget webhook to n8n without blocking the response.
+   * handles user identification/creation, links unassigned orders via trackingCode,
+   * then fires a fire-and-forget webhook to n8n.
    *
-   * @param dto     Validated quote creation payload.
-   * @param userId  Optional — linked user ID if request is authenticated.
+   * @param dto Validated quote creation payload.
    */
-  async create(dto: CreateQuoteDto, userId?: number) {
-    const year          = new Date().getFullYear();
+  async create(dto: CreateQuoteDto) {
+    const year = new Date().getFullYear();
     const referenceCode = await this.quotesRepository.generateReferenceCode(year);
-    const quote         = await this.quotesRepository.create(dto, referenceCode, userId);
 
-    // Webhook fire-and-forget: does not block the HTTP response
+    let userId: number | undefined;
+
+    // 1. Identify user or create a temporary client account
+    const existingUser = await this.usersRepository.findByEmail(dto.email);
+    if (existingUser) {
+      userId = existingUser.id;
+    } else {
+      const newUser = await this.usersRepository.createClient({
+        name: dto.name,
+        email: dto.email,
+        phone: dto.phone,
+        city: dto.city,
+      });
+      userId = newUser.id;
+    }
+
+    // 2. Optional: Link with trackingCode if provided
+    if (dto.trackingCode) {
+      const order = await this.ordersRepository.findByTrackingCodeOnly(dto.trackingCode);
+      if (order && !order.userId) {
+         // Reassign anonymous or system-created order to this user
+        await this.ordersRepository.assignToUserId(order.id, userId);
+      }
+    }
+
+    // 3. Persist the quote
+    const quote = await this.quotesRepository.create(dto, referenceCode, userId);
+
+    // 4. Webhook fire-and-forget: does not block the HTTP response
     this.webhookService.fire({
-      quoteId:          quote.id,
-      referenceCode:    quote.referenceCode,
-      name:             quote.name,
-      email:            quote.email,
-      phone:            quote.phone,
+      quoteId: quote.id,
+      referenceCode: quote.referenceCode,
+      name: quote.name,
+      email: quote.email,
+      phone: quote.phone,
       preferredChannel: quote.preferredChannel,
-      modelId:          quote.model?.id ?? null,
-      trimId:           quote.trim?.id  ?? null,
-      utmSource:        quote.utmSource   ?? null,
-      utmMedium:        quote.utmMedium   ?? null,
-      utmCampaign:      quote.utmCampaign ?? null,
-      source:           quote.source      ?? null,
-      status:           quote.status,
-      timestamp:        new Date().toISOString(),
+      modelId: quote.model?.id ?? null,
+      trimId: quote.trim?.id ?? null,
+      utmSource: quote.utmSource,
+      utmMedium: quote.utmMedium,
+      utmCampaign: quote.utmCampaign,
+      source: quote.source,
+      status: quote.status,
+      timestamp: new Date().toISOString(),
     });
 
     return quote;
   }
 
-  // ─── Admin: List all quotes ──────────────────────────────────────────────
+  // ─── Read — Admin ──────────────────────────────────────────────────────────
 
-  async findAll(query: QueryQuoteDto): Promise<PaginatedResult<unknown>> {
-    const page  = query.page  ?? 1;
+  async findAll(query: QueryQuoteDto): Promise<PaginatedResult<any>> {
+    const page = query.page ?? 1;
     const limit = query.limit ?? 10;
 
     const [data, total] = await Promise.all([
@@ -69,60 +100,45 @@ export class QuotesService {
 
     return {
       data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
 
-  // ─── Admin: Quote detail ─────────────────────────────────────────────────
-
   async findOne(id: number) {
     const quote = await this.quotesRepository.findByIdAdmin(id);
-    if (!quote) {
-      throw new NotFoundException(`Cotización #${id} no encontrada`);
-    }
+    if (!quote) throw new NotFoundException(`Cotización #${id} no encontrada`);
     return quote;
   }
 
-  // ─── Admin: Update quote ─────────────────────────────────────────────────
+  // ─── Update — Admin ────────────────────────────────────────────────────────
 
   async update(id: number, dto: UpdateQuoteDto) {
-    const existing = await this.quotesRepository.checkExistence(id);
-    if (!existing) {
-      throw new NotFoundException(`Cotización #${id} no encontrada`);
-    }
-    return this.quotesRepository.update(id, dto);
+    const exists = await this.quotesRepository.checkExistence(id);
+    if (!exists) throw new NotFoundException(`Cotización #${id} no encontrada`);
+
+    const updated = await this.quotesRepository.update(id, dto);
+
+    // If status changed to won/lost, we could trigger other side effects here
+    return updated;
   }
 
-  // ─── Admin: Stats ─────────────────────────────────────────────────────────
+  // ─── Read — Client ────────────────────────────────────────────────────────
 
-  async getStats() {
-    return this.quotesRepository.getStats();
-  }
-
-  // ─── Client: My quotes ───────────────────────────────────────────────────
-
-  async findMyQuotes(
-    userId: number,
-    query: QueryMyQuoteDto,
-  ): Promise<PaginatedResult<unknown>> {
-    const page  = query.page  ?? 1;
+  async findMyQuotes(userId: number, query: QueryMyQuoteDto): Promise<PaginatedResult<any>> {
+    const page = query.page ?? 1;
     const limit = query.limit ?? 10;
 
     const { data, total } = await this.quotesRepository.findByUserId(userId, query);
 
     return {
       data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
+  }
+
+  // ─── Stats — Admin ────────────────────────────────────────────────────────
+
+  async getStats() {
+    return this.quotesRepository.getStats();
   }
 }

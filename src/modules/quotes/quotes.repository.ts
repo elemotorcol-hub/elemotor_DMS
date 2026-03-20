@@ -17,6 +17,10 @@ export const QUOTE_LIST_SELECT = {
   email: true,
   phone: true,
   city: true,
+  country: true,
+  modelInterest: true,
+  budgetRange: true,
+  trackingCode: true,
   source: true,
   preferredChannel: true,
   utmSource: true,
@@ -109,6 +113,8 @@ export class QuotesRepository {
         email:           dto.email,
         phone:           dto.phone,
         city:            dto.city,
+        country:         dto.country,
+        trackingCode:    dto.trackingCode,
         modelId:         dto.modelId,
         trimId:          dto.trimId,
         budgetRange:     dto.budgetRange,
@@ -211,9 +217,14 @@ export class QuotesRepository {
     return this.prisma.quote.update({
       where: { id },
       data: {
-        ...(dto.status       !== undefined ? { status:       dto.status       } : {}),
-        ...(dto.assignedToId !== undefined ? { assignedToId: dto.assignedToId } : {}),
-        ...(dto.notes        !== undefined ? { notes:        dto.notes        } : {}),
+        ...(dto.status        !== undefined ? { status:        dto.status        } : {}),
+        ...(dto.assignedToId  !== undefined ? { assignedToId:  dto.assignedToId  } : {}),
+        ...(dto.notes         !== undefined ? { notes:         dto.notes         } : {}),
+        ...(dto.modelInterest !== undefined ? { modelInterest: dto.modelInterest } : {}),
+        ...(dto.budgetRange   !== undefined ? { budgetRange:   dto.budgetRange   } : {}),
+        ...(dto.name          !== undefined ? { name:          dto.name          } : {}),
+        ...(dto.email         !== undefined ? { email:         dto.email         } : {}),
+        ...(dto.phone         !== undefined ? { phone:         dto.phone         } : {}),
       },
       select: QUOTE_DETAIL_SELECT,
     });
@@ -294,5 +305,31 @@ export class QuotesRepository {
     });
 
     return result.count;
+  }
+
+  // ─── Tracking Linkage ──────────────────────────────────────────────────────
+
+  /**
+   * findByTrackingCodeAndEmail — Validates that a quote exists for a specific
+   * unassigned order code and matching client email.
+   */
+  async findByTrackingCodeAndEmail(trackingCode: string, email: string) {
+    return this.prisma.quote.findFirst({
+      where: {
+        trackingCode,
+        email,
+      },
+      select: { id: true },
+    });
+  }
+
+  /**
+   * updateTrackingCode — Allows linking a quote to an order's tracking code.
+   */
+  async updateTrackingCode(id: number, trackingCode: string) {
+    return this.prisma.quote.update({
+      where: { id },
+      data: { trackingCode },
+    });
   }
 }
