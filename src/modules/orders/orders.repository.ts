@@ -101,6 +101,10 @@ export const ORDER_MY_DETAIL_SELECT = {
     select: {
       id: true,
       name: true,
+      images: {
+        orderBy: { sortOrder: 'asc' },
+        select: { url: true },
+      },
       model: { select: { id: true, name: true, brand: { select: { id: true, name: true } } } },
     },
   },
@@ -284,6 +288,7 @@ export class OrdersRepository {
     const skip = (page - 1) * limit;
 
     const where: Prisma.OrderWhereInput = { userId };
+    const select = filters.includeDetails ? ORDER_MY_DETAIL_SELECT : ORDER_MY_LIST_SELECT;
 
     const [data, total] = await Promise.all([
       this.prisma.order.findMany({
@@ -291,7 +296,7 @@ export class OrdersRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        select: ORDER_MY_LIST_SELECT,
+        select,
       }),
       this.prisma.order.count({ where }),
     ]);
