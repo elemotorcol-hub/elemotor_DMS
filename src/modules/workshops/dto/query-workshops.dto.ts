@@ -1,5 +1,5 @@
-import { IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, IsIn } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { ServiceType } from '@prisma/client';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
 
@@ -26,4 +26,14 @@ export class QueryWorkshopsDto extends PaginationDto {
   @IsOptional()
   @Type(() => Number)
   radius?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  includeInactive?: boolean;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['rating_desc'])
+  sortBy?: 'rating_desc';
 }

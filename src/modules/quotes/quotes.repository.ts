@@ -53,15 +53,26 @@ export const QUOTE_DETAIL_SELECT = {
   trim: { select: { id: true, name: true, price: true, status: true } },
 } satisfies Prisma.QuoteSelect;
 
-/** Client list — hides internal notes, assignedTo, and UTMs */
 export const QUOTE_MY_LIST_SELECT = {
   id: true,
   referenceCode: true,
   status: true,
+  budgetRange: true,
+  city: true,
+  message: true,
   preferredChannel: true,
   createdAt: true,
-  model: { select: { id: true, name: true } },
-  trim:  { select: { id: true, name: true } },
+  model: {
+    select: {
+      id: true,
+      name: true,
+      brand: { select: { name: true } },
+      trims: { select: { images: true }, take: 1 }
+    }
+  },
+  trim: {
+    select: { id: true, name: true, images: true }
+  },
 } satisfies Prisma.QuoteSelect;
 
 // ─── Repository ───────────────────────────────────────────────────────────────

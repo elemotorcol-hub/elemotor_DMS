@@ -58,7 +58,7 @@ export class WorkshopsService {
 
   async update(id: number, dto: UpdateWorkshopDto) {
     const workshop = await this.repository.findById(id);
-    if (!workshop || !workshop.active) {
+    if (!workshop) {
       throw new NotFoundException(`Workshop #${id} not found`);
     }
     return this.repository.update(id, dto);
@@ -66,7 +66,7 @@ export class WorkshopsService {
 
   async remove(id: number) {
     const workshop = await this.repository.findById(id);
-    if (!workshop || !workshop.active) {
+    if (!workshop) {
       throw new NotFoundException(`Workshop #${id} not found`);
     }
     return this.repository.delete(id);
@@ -76,7 +76,7 @@ export class WorkshopsService {
 
   async uploadImage(id: number, file: Express.Multer.File, altText?: string, sortOrder: number = 0) {
     const workshop = await this.repository.findById(id);
-    if (!workshop || !workshop.active) {
+    if (!workshop) {
       throw new NotFoundException(`Workshop #${id} not found`);
     }
 

@@ -178,6 +178,32 @@ export class OrdersController {
   // ══════════════════════════════════════════════════════════════════════════
 
   /**
+   * GET /api/orders/my-delivery
+   * Retorna el pedido entregado del usuario actual con la fecha de entrega derivada.
+   * Usado por el módulo de mantenimiento para validar acceso.
+   */
+  @Get('my-delivery')
+  @ApiOperation({ summary: '[Cliente] Obtener pedido entregado + fecha de entrega' })
+  @ApiResponse({ status: 200, description: 'Pedido entregado del usuario' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  findMyDeliveredOrder(@Req() req: AuthRequest) {
+    return this.ordersService.getDeliveredOrder(req.user.sub);
+  }
+
+  /**
+   * GET /api/orders/my-vehicle
+   * Retorna el vehículo del usuario actual estructurado para el dashboard.
+   */
+  @Get('my-vehicle')
+  @ApiOperation({ summary: '[Cliente] Obtener el vehículo principal del usuario' })
+  @ApiResponse({ status: 200, description: 'Vehículo actual del usuario' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 404, description: 'Sin vehículos' })
+  findMyVehicle(@Req() req: AuthRequest) {
+    return this.ordersService.findMyVehicle(req.user.sub);
+  }
+
+  /**
    * GET /api/orders/my
    * Retorna los pedidos del usuario autenticado con último estado.
    */

@@ -19,7 +19,7 @@ import { FileUploadType } from '../upload/upload.validators';
  *
  * - Listar documentos del usuario autenticado
  * - Subir documento a Cloudinary y persistir metadata en DB
- * - Generar URL firmada de Cloudinary para descarga segura
+ * - Proveer URL de previsualización (inline) y URL firmada de descarga segura
  */
 @Injectable()
 export class DocumentsService {
@@ -87,60 +87,72 @@ export class DocumentsService {
     return document;
   }
 
-  // ─── URL firmada para descarga ─────────────────────────────────────────────
+  // ─── URLs de previsualización y descarga ──────────────────────────────────
 
   /**
-   * getDownloadUrl — Genera una URL firmada de Cloudinary válida por 15 minutos.
+   * getDocumentUrls — Genera:
+   * - previewUrl: URL directa de Cloudinary (inline, sin attachment)
+   * - downloadUrl: URL firmada con expiración de 15 min (fuerza descarga)
+   *
    * Verifica ownership del documento (cliente solo ve el suyo; admin ve todos).
    */
-  async getDownloadUrl(docId: number, userId: number, userRole: string) {
-    let document: Awaited<ReturnType<typeof this.documentsRepository.findByIdForAdmin>> | null;
-
+  async getDocumentUrls(
+    docId: number,
+    userId: number,
+    userRole: string,
+  ): Promise<{ previewUrl: string; downloadUrl: string; documentName: string; expiresAt: string | null }> {
     const isAdmin = userRole === UserRole.admin || userRole === UserRole.super_admin;
 
-    if (isAdmin) {
-      document = await this.documentsRepository.findByIdForAdmin(docId);
-    } else {
-      document = await this.documentsRepository.findByIdAndUserId(docId, userId);
-    }
+    const document = isAdmin
+      ? await this.documentsRepository.findByIdForAdmin(docId)
+      : await this.documentsRepository.findByIdAndUserId(docId, userId);
 
     if (!document) {
       throw new NotFoundException(`Documento #${docId} no encontrado`);
     }
 
-    if (!(document as any).publicId) {
-      // Documento antiguo sin publicId — devolver fileUrl directo
-      this.logger.warn(
-        `Document #${docId} has no publicId; returning raw fileUrl for compatibility`,
-      );
-      return { url: document.fileUrl, expiresAt: null };
-    }
+    // La previewUrl siempre es la URL pública almacenada (sin flags de descarga)
+    const previewUrl = document.fileUrl;
 
-    // Generar URL firmada con expiración de 15 minutos
+    // Generar URL firmada con expiración de 15 minutos para descarga segura
     const expiresAt = Math.floor(Date.now() / 1000) + 15 * 60;
 
-    try {
-      const signedUrl = this.cloudinary.utils.private_download_url(
-        (document as any).publicId,
-        '', // Permite extensión original (no forzar 'pdf')
-        {
-          resource_type: 'raw',
-          expires_at: expiresAt,
-          attachment: true,
-        },
-      );
+    // Determinar resource_type según cómo fue almacenado el archivo
+    const resourceType = document.fileUrl.includes('/image/upload/') ? 'image' : 'raw';
 
-      return {
-        url: signedUrl,
-        expiresAt: new Date(expiresAt * 1000).toISOString(),
-        documentName: document.name,
-      };
+    let downloadUrl: string;
+    let expiresAtDate: string | null = null;
+
+    try {
+      if (!document.publicId) {
+        // Documento legado sin publicId — usamos fileUrl como fallback
+        this.logger.warn(`Document #${docId} has no publicId; returning raw fileUrl as downloadUrl`);
+        downloadUrl = document.fileUrl;
+      } else {
+        downloadUrl = this.cloudinary.utils.private_download_url(
+          document.publicId,
+          'pdf',
+          {
+            resource_type: resourceType,
+            expires_at: expiresAt,
+            attachment: true,
+          },
+        );
+        expiresAtDate = new Date(expiresAt * 1000).toISOString();
+      }
     } catch (err) {
       this.logger.error(
-        `Failed to generate signed URL for document #${docId}: ${(err as Error).message}`,
+        `Failed to generate signed download URL for document #${docId}: ${(err as Error).message}`,
       );
-      // Fallback: devolver URL pública si Cloudinary no retorna URL firmada
-      return { url: document.fileUrl, expiresAt: null };
+      // Fallback: devolver fileUrl directa si la firma de Cloudinary falla
+      downloadUrl = document.fileUrl;
     }
+
+    return {
+      previewUrl,
+      downloadUrl,
+      documentName: document.name,
+      expiresAt: expiresAtDate,
+    };
   }
 }

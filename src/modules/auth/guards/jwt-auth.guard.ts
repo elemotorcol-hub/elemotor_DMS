@@ -1,4 +1,4 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -17,14 +17,27 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   canActivate(context: ExecutionContext) {
+    // We let passport run canActivate to extract the user
+    return super.canActivate(context);
+  }
+
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    // Rutas marcadas con @Public() pasan sin validar el token
-    if (isPublic) return true;
+    // Si es pública y no hay usuario válido, retornamos `true` para no bloquear
+    // passport asignará req.user = true, por lo que req.user?.sub será undefined y no fallará.
+    if (isPublic && !user) {
+      return true;
+    }
 
-    return super.canActivate(context);
+    if (err || !user) {
+      throw err || new UnauthorizedException();
+    }
+
+    return user;
   }
 }
+

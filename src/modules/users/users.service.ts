@@ -14,6 +14,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { PaginatedResult } from '../../common/dto/pagination.dto';
+import { UploadService } from '../upload/upload.service';
 
 /** Número de rounds de bcrypt — consistente con AuthService */
 const BCRYPT_SALT_ROUNDS = 12;
@@ -24,8 +25,10 @@ const PROFILE_SELECT = {
   name: true,
   email: true,
   phone: true,
+  cedula: true,
   city: true,
   avatarUrl: true,
+  avatarPublicId: true,
   role: true,
   emailVerifiedAt: true,
   createdAt: true,
@@ -45,7 +48,10 @@ export type AdminUserPayload = Prisma.UserGetPayload<{ select: typeof ADMIN_LIST
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly uploadService: UploadService,
+  ) {}
 
   // ─── Perfil propio ────────────────────────────────────────────────────────
 
@@ -76,11 +82,24 @@ export class UsersService {
     const user = await this.usersRepository.findById(userId);
     if (!user) throw new NotFoundException('Usuario no encontrado');
 
+    if (dto.avatarPublicId !== undefined && dto.avatarPublicId !== user.avatarPublicId) {
+      if (user.avatarPublicId) {
+        try {
+          await this.uploadService.deleteFile(user.avatarPublicId, 'image');
+        } catch (e) {
+          this.logger.error(`Error al borrar avatar huérfano de Cloudinary: ${user.avatarPublicId}`, e);
+          // Falla silenciada para no romper la experiencia de usuario
+        }
+      }
+    }
+
     const updated = await this.usersRepository.update(userId, {
       ...(dto.name !== undefined && { name: dto.name }),
       ...(dto.phone !== undefined && { phone: dto.phone }),
+      ...(dto.cedula !== undefined && { cedula: dto.cedula }),
       ...(dto.city !== undefined && { city: dto.city }),
       ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
+      ...(dto.avatarPublicId !== undefined && { avatarPublicId: dto.avatarPublicId }),
     });
 
     return Object.fromEntries(

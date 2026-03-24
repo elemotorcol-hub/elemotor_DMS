@@ -139,50 +139,53 @@ model Model3d {
 }
 
 model User {
-  id                   Int                  @id @default(autoincrement())
-  name                 String               @db.VarChar(255)
-  email                String               @unique @db.VarChar(255)
-  phone                String?              @db.VarChar(50)
-  passwordHash         String?              @map("password_hash") @db.VarChar(255)
-  cedula               String?              @db.VarChar(50)
-  city                 String?              @db.VarChar(100)
-  role                 UserRole             @default(client)
-  googleId             String?              @map("google_id") @db.VarChar(255)
-  avatarUrl            String?              @map("avatar_url") @db.VarChar(500)
-  emailVerifiedAt      DateTime?            @map("email_verified_at")
-  createdAt            DateTime             @default(now()) @map("created_at")
-  updatedAt            DateTime             @updatedAt @map("updated_at")
-  otpCode              String?              @map("otp_code") @db.VarChar(10)
-  otpExpiresAt         DateTime?            @map("otp_expires_at")
-  passwordResetExpires DateTime?            @map("password_reset_expires")
-  passwordResetToken   String?              @map("password_reset_token") @db.VarChar(255)
-  refreshToken         String?              @map("refresh_token") @db.VarChar(500)
+  id                   Int                   @id @default(autoincrement())
+  name                 String                @db.VarChar(255)
+  email                String                @unique @db.VarChar(255)
+  phone                String?               @db.VarChar(50)
+  passwordHash         String?               @map("password_hash") @db.VarChar(255)
+  cedula               String?               @db.VarChar(50)
+  city                 String?               @db.VarChar(100)
+  role                 UserRole              @default(client)
+  googleId             String?               @map("google_id") @db.VarChar(255)
+  avatarUrl            String?               @map("avatar_url") @db.VarChar(500)
+  avatarPublicId       String?               @map("avatar_public_id") @db.VarChar(255)
+  emailVerifiedAt      DateTime?             @map("email_verified_at")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  otpCode              String?               @map("otp_code") @db.VarChar(10)
+  otpExpiresAt         DateTime?             @map("otp_expires_at")
+  passwordResetExpires DateTime?             @map("password_reset_expires")
+  passwordResetToken   String?               @map("password_reset_token") @db.VarChar(255)
+  refreshToken         String?               @map("refresh_token") @db.VarChar(500)
   documents            Document[]
-  statusHistoryUpdates OrderStatusHistory[] @relation("UpdatedBy")
+  statusHistoryUpdates OrderStatusHistory[]  @relation("UpdatedBy")
   orders               Order[]
-  assignedQuotes       Quote[]              @relation("QuoteAssignedTo")
-  quotes               Quote[]              @relation("QuoteUser")
+  assignedQuotes       Quote[]               @relation("QuoteAssignedTo")
+  quotes               Quote[]               @relation("QuoteUser")
+  maintenanceRecords   MaintenanceRecord[]
 
   @@map("users")
 }
 
 model Order {
-  id                Int                  @id @default(autoincrement())
-  userId            Int                  @map("user_id")
-  trimId            Int                  @map("trim_id")
-  colorId           Int                  @map("color_id")
-  trackingCode      String?              @unique @map("tracking_code") @db.VarChar(50)
-  status            OrderStatus
-  estimatedDelivery DateTime?            @map("estimated_delivery") @db.Date
-  vin               String?              @db.VarChar(17)
-  createdAt         DateTime             @default(now()) @map("created_at")
-  updatedAt         DateTime             @updatedAt @map("updated_at")
-  notes             String?              @db.Text
-  documents         Document[]
-  statusHistory     OrderStatusHistory[]
-  color             Color                @relation(fields: [colorId], references: [id])
-  trim              Trim                 @relation(fields: [trimId], references: [id])
-  user              User                 @relation(fields: [userId], references: [id])
+  id                  Int                   @id @default(autoincrement())
+  userId              Int                   @map("user_id")
+  trimId              Int                   @map("trim_id")
+  colorId             Int                   @map("color_id")
+  trackingCode        String?               @unique @map("tracking_code") @db.VarChar(50)
+  status              OrderStatus
+  estimatedDelivery   DateTime?             @map("estimated_delivery") @db.Date
+  vin                 String?               @db.VarChar(17)
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  notes               String?               @db.Text
+  documents           Document[]
+  statusHistory       OrderStatusHistory[]
+  maintenanceRecords  MaintenanceRecord[]
+  color               Color                 @relation(fields: [colorId], references: [id])
+  trim                Trim                  @relation(fields: [trimId], references: [id])
+  user                User                  @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([trimId])
@@ -283,29 +286,52 @@ model Document {
 }
 
 model Workshop {
-  id            Int               @id @default(autoincrement())
-  name          String            @db.VarChar(255)
-  address       String?           @db.VarChar(500)
-  city          String?           @db.VarChar(100)
-  state         String?           @db.VarChar(100)
-  latitude      Decimal?          @db.Decimal(10, 8)
-  longitude     Decimal?          @db.Decimal(11, 8)
-  phone         String?           @db.VarChar(50)
-  whatsapp      String?           @db.VarChar(50)
-  email         String?           @db.VarChar(255)
-  googleMapsUrl String?           @map("google_maps_url") @db.VarChar(500)
-  rating        Decimal?          @db.Decimal(2, 1)
-  description   String?           @db.Text
-  amenities     Json?
-  isVerified    Boolean           @default(true) @map("is_verified")
-  active        Boolean           @default(true)
-  createdAt     DateTime          @default(now()) @map("created_at")
-  updatedAt     DateTime          @updatedAt @map("updated_at")
-  hours         WorkshopHour[]
-  images        WorkshopImage[]
-  services      WorkshopService[]
+  id                 Int                  @id @default(autoincrement())
+  name               String               @db.VarChar(255)
+  address            String?              @db.VarChar(500)
+  city               String?              @db.VarChar(100)
+  state              String?              @db.VarChar(100)
+  latitude           Decimal?             @db.Decimal(10, 8)
+  longitude          Decimal?             @db.Decimal(11, 8)
+  phone              String?              @db.VarChar(50)
+  whatsapp           String?              @db.VarChar(50)
+  email              String?              @db.VarChar(255)
+  googleMapsUrl      String?              @map("google_maps_url") @db.VarChar(500)
+  rating             Decimal?             @db.Decimal(2, 1)
+  description        String?              @db.Text
+  amenities          Json?
+  isVerified         Boolean              @default(true) @map("is_verified")
+  active             Boolean              @default(true)
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  hours              WorkshopHour[]
+  images             WorkshopImage[]
+  services           WorkshopService[]
+  maintenanceRecords MaintenanceRecord[]
 
   @@map("workshops")
+}
+
+model MaintenanceRecord {
+  id         Int       @id @default(autoincrement())
+  orderId    Int       @map("order_id")
+  userId     Int       @map("user_id")
+  workshopId Int?      @map("workshop_id")
+  date       DateTime  @db.Date
+  type       String    @db.VarChar(100)
+  rating     Int?      @db.TinyInt
+  comment    String?   @db.Text
+  cost       Decimal?  @db.Decimal(12, 2)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  order      Order     @relation(fields: [orderId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+  workshop   Workshop? @relation(fields: [workshopId], references: [id])
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([workshopId])
+  @@map("maintenance_records")
 }
 
 model WorkshopService {

@@ -135,14 +135,15 @@ export class DocumentsController {
    * - Admin / Super_admin: pueden descargar cualquier documento.
    */
   @Get(':id/download')
-  @ApiOperation({ summary: 'Obtener URL firmada de Cloudinary para descarga segura' })
+  @ApiOperation({ summary: 'Obtener URLs de previsualizacion y descarga segura (firmada)' })
   @ApiParam({ name: 'id', type: Number, description: 'ID del documento' })
   @ApiResponse({
     status: 200,
-    description: 'URL firmada válida por 15 minutos',
+    description: 'URLs de previsualización e descarga firmada válida por 15 minutos',
     schema: {
       example: {
-        url: 'https://res.cloudinary.com/.../soat_abc123.pdf?signature=...',
+        previewUrl: 'https://res.cloudinary.com/.../soat_abc123.pdf',
+        downloadUrl: 'https://res.cloudinary.com/.../soat_abc123.pdf?signature=...',
         expiresAt: '2026-03-06T10:15:00.000Z',
         documentName: 'SOAT 2026',
       },
@@ -150,7 +151,7 @@ export class DocumentsController {
   })
   @ApiResponse({ status: 401, description: 'No autenticado' })
   @ApiResponse({ status: 404, description: 'Documento no encontrado o sin acceso' })
-  getDownloadUrl(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
-    return this.documentsService.getDownloadUrl(id, req.user.sub, req.user.role);
+  getDocumentUrls(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
+    return this.documentsService.getDocumentUrls(id, req.user.sub, req.user.role);
   }
 }

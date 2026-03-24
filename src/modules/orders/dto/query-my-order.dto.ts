@@ -1,6 +1,6 @@
-import { IsOptional, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsInt, Min, Max, IsBoolean } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 /**
  * QueryMyOrderDto — Query params para los endpoints de CLIENTE.
@@ -29,4 +29,13 @@ export class QueryMyOrderDto {
   @Max(100)
   @Type(() => Number)
   limit?: number = 10;
+
+  @ApiPropertyOptional({
+    description: 'Incluir desglose de historial, imágenes y detalles completos del vehículo',
+    type: Boolean,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  includeDetails?: boolean;
 }

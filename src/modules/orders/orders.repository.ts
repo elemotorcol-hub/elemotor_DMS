@@ -52,6 +52,39 @@ export const ORDER_MY_LIST_SELECT = {
 } satisfies Prisma.OrderSelect;
 
 /**
+ * ORDER_MY_VEHICLE_SELECT — Datos completos del vehículo para el cliente.
+ * Incluye especificaciones técnicas y la imagen principal (hero).
+ */
+export const ORDER_MY_VEHICLE_SELECT = {
+  id: true,
+  trackingCode: true,
+  status: true,
+  vin: true,
+  estimatedDelivery: true,
+  createdAt: true,
+  trim: {
+    select: {
+      id: true,
+      name: true,
+      spec: true,
+      images: {
+        orderBy: { sortOrder: 'asc' },
+        select: { url: true },
+      },
+      model: {
+        select: {
+          id: true,
+          name: true,
+          year: true,
+          brand: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+  color: { select: { id: true, name: true, hexCode: true } },
+} satisfies Prisma.OrderSelect;
+
+/**
  * ORDER_MY_DETAIL_SELECT — Detalle de un pedido del cliente.
  * Incluye historial completo de estados ordenado cronológicamente.
  */
@@ -68,6 +101,10 @@ export const ORDER_MY_DETAIL_SELECT = {
     select: {
       id: true,
       name: true,
+      images: {
+        orderBy: { sortOrder: 'asc' },
+        select: { url: true },
+      },
       model: { select: { id: true, name: true, brand: { select: { id: true, name: true } } } },
     },
   },
@@ -276,6 +313,7 @@ export class OrdersRepository {
     const skip = (page - 1) * limit;
 
     const where: Prisma.OrderWhereInput = { userId };
+    const select = filters.includeDetails ? ORDER_MY_DETAIL_SELECT : ORDER_MY_LIST_SELECT;
 
     const [data, total] = await Promise.all([
       this.prisma.order.findMany({
@@ -283,7 +321,7 @@ export class OrdersRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        select: ORDER_MY_LIST_SELECT,
+        select,
       }),
       this.prisma.order.count({ where }),
     ]);
@@ -347,6 +385,61 @@ export class OrdersRepository {
     return this.prisma.order.update({
       where: { id: orderId },
       data: { userId },
+    });
+  }
+
+  /**
+   * findDeliveredOrder — Busca el pedido más reciente del usuario con estado "delivered".
+   * Deriva la fecha de entrega desde el historial de estados (entrada donde status = delivered).
+   */
+  async findDeliveredOrder(userId: number) {
+    const order = await this.prisma.order.findFirst({
+      where: { userId, status: OrderStatus.delivered },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        trackingCode: true,
+        statusHistory: {
+          where: { status: OrderStatus.delivered },
+          orderBy: { date: 'desc' },
+          take: 1,
+          select: { date: true },
+        },
+      },
+    });
+
+    if (!order) return null;
+
+    const deliveredAt = order.statusHistory[0]?.date ?? null;
+
+    return {
+      orderId: order.id,
+      status: order.status,
+      trackingCode: order.trackingCode,
+      deliveredAt: deliveredAt ? deliveredAt.toISOString() : null,
+    };
+  }
+
+  /** findMyVehicle — Obtiene el vehículo más reciente del cliente con especificaciones completas. */
+  async findMyVehicle(userId: number) {
+    return this.prisma.order.findFirst({
+      where: {
+        userId,
+        status: {
+          in: [
+            OrderStatus.confirmed,
+            OrderStatus.port_origin,
+            OrderStatus.transit,
+            OrderStatus.customs,
+            OrderStatus.nationalization,
+            OrderStatus.ready,
+            OrderStatus.delivered,
+          ],
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: ORDER_MY_VEHICLE_SELECT,
     });
   }
 

@@ -193,4 +193,24 @@ export class OrdersService {
 
     return order;
   }
+
+  /**
+   * findMyVehicle — Retorna el vehículo actual del usuario autenticado
+   * con sus especificaciones completas para el dashboard.
+   */
+  async findMyVehicle(userId: number) {
+    const vehicle = await this.ordersRepository.findMyVehicle(userId);
+    if (!vehicle) {
+      throw new NotFoundException(`No hay vehículos asignados a este usuario`);
+    }
+    return vehicle;
+  }
+
+  /**
+   * getDeliveredOrder — Retorna el pedido entregado del cliente con la fecha de entrega.
+   * Retorna null si el usuario no tiene un pedido en estado "delivered".
+   */
+  async getDeliveredOrder(userId: number) {
+    return this.ordersRepository.findDeliveredOrder(userId);
+  }
 }
