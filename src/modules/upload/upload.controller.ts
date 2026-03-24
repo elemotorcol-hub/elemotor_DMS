@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Body,
   UploadedFile,
   UseInterceptors,
   Query,
@@ -140,5 +141,39 @@ export class UploadController {
       file,
       type as FileUploadType.MODEL_3D | FileUploadType.DOCUMENT,
     );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // DELETE /api/upload
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Elimina un archivo de Cloudinary.
+   */
+  @Post('delete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Eliminar archivo de Cloudinary por publicId' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['publicId'],
+      properties: {
+        publicId: { type: 'string' },
+        resourceType: { type: 'string', enum: ['image', 'raw'], default: 'image' }
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Archivo eliminado exitosamente.' })
+  @ApiResponse({ status: 400, description: 'Falta publicId.' })
+  @ApiResponse({ status: 401, description: 'No autenticado.' })
+  async deleteFileByPost(
+    @Body('publicId') publicId: string,
+    @Body('resourceType') resourceType: 'image' | 'raw' = 'image',
+  ): Promise<{ message: string }> {
+    if (!publicId) {
+      throw new BadRequestException('Se requiere publicId');
+    }
+    await this.uploadService.deleteFile(publicId, resourceType);
+    return { message: 'Archivo eliminado' };
   }
 }

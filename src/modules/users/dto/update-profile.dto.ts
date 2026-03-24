@@ -3,6 +3,7 @@ import {
   IsOptional,
   MaxLength,
   IsUrl,
+  ValidateIf,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -23,6 +24,12 @@ export class UpdateProfileDto {
   @MaxLength(50)
   phone?: string;
 
+  @ApiPropertyOptional({ example: '123456789', description: 'Documento de identidad (cédula)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  cedula?: string;
+
   @ApiPropertyOptional({ example: 'Bogotá', description: 'Ciudad de residencia' })
   @IsOptional()
   @IsString()
@@ -34,7 +41,18 @@ export class UpdateProfileDto {
     description: 'URL del avatar del usuario',
   })
   @IsOptional()
+  @ValidateIf((o) => o.avatarUrl !== null)
   @IsUrl()
   @MaxLength(500)
-  avatarUrl?: string;
+  avatarUrl?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'avatars/abcde123',
+    description: 'Public ID en Cloudinary del avatar',
+  })
+  @IsOptional()
+  @ValidateIf((o) => o.avatarPublicId !== null)
+  @IsString()
+  @MaxLength(255)
+  avatarPublicId?: string | null;
 }

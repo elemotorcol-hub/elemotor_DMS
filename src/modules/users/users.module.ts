@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { UsersRepository } from './users.repository';
+import { UploadModule } from '../upload/upload.module';
 
 /**
  * UsersModule — Gestión de perfil y administración de usuarios.
@@ -16,6 +17,7 @@ import { UsersRepository } from './users.repository';
  * PrismaService se inyecta gracias a PrismaModule que es global.
  */
 @Module({
+  imports: [UploadModule],
   controllers: [UsersController],
   providers: [UsersService, UsersRepository],
   exports: [UsersService],
