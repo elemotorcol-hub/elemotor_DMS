@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { OrdersRepository } from './orders.repository';
 import { OrdersWebhookService } from './webhook/orders-webhook.service';
+import { QuotesRepository } from '../quotes/quotes.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -20,6 +21,7 @@ export class OrdersService {
   constructor(
     private readonly ordersRepository: OrdersRepository,
     private readonly webhookService: OrdersWebhookService,
+    private readonly quotesRepository: QuotesRepository,
   ) {}
 
   // ─── Admin: Crear pedido ───────────────────────────────────────────────────
@@ -29,8 +31,14 @@ export class OrdersService {
    * junto con su historial inicial en una transacción.
    */
   async create(dto: CreateOrderDto, adminId: number) {
-    const year = new Date().getFullYear();
-    const trackingCode = await this.ordersRepository.generateTrackingCode(year);
+    // Si el administrador proporciona un código de seguimiento (p.ej. de una cotización), lo usamos.
+    // De lo contrario, generamos uno nuevo.
+    let trackingCode = dto.trackingCode;
+    if (!trackingCode) {
+      const year = new Date().getFullYear();
+      trackingCode = await this.ordersRepository.generateTrackingCode(year);
+    }
+
     return this.ordersRepository.create(dto, trackingCode, adminId);
   }
 
@@ -143,6 +151,46 @@ export class OrdersService {
     if (!order) {
       throw new NotFoundException(`Pedido #${id} no encontrado`);
     }
+    return order;
+  }
+
+  // ─── Público: Rastreo sin autenticación ──────────────────────────────────
+
+  /**
+   * trackPublicly — Busca un pedido por código de seguimiento e identidad.
+   * Si no coincide el código + identidad → 404 genérico (no revela existencia).
+   */
+  async trackPublicly(trackingCode: string, identity: string) {
+    // 1. Buscamos el pedido por su código de seguimiento.
+    const order = await this.ordersRepository.findPublicDetail(trackingCode);
+    if (!order) {
+      throw new NotFoundException('No encontramos un pedido con ese código.');
+    }
+
+    // 2. Si el pedido TIENE un usuario asignado, validamos por identidad estándar (email/teléfono).
+    if (order.userId) {
+      const orderFull = await this.ordersRepository.findByTrackingCode(trackingCode, identity);
+      if (!orderFull) {
+        throw new NotFoundException(
+          'No encontramos un pedido con ese código y datos de identidad.',
+        );
+      }
+      return orderFull;
+    }
+
+    // 3. Si el pedido NO TIENE usuario (anónimo), validamos que exista una QUOTE coincidente.
+    // El cliente debe proporcionar el correo que usó en la cotización.
+    const validQuote = await this.quotesRepository.findByTrackingCodeAndEmail(
+      trackingCode,
+      identity,
+    );
+
+    if (!validQuote) {
+      throw new NotFoundException(
+        'No se encontró una cotización válida vinculada a este código y correo.',
+      );
+    }
+
     return order;
   }
 }

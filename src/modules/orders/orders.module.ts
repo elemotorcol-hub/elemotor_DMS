@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { OrdersRepository } from './orders.repository';
 import { OrdersWebhookService } from './webhook/orders-webhook.service';
+import { QuotesModule } from '../quotes/quotes.module';
 
 /**
  * OrdersModule — Gestión de pedidos de importación.
@@ -19,6 +20,7 @@ import { OrdersWebhookService } from './webhook/orders-webhook.service';
  * ConfigModule es global → OrdersWebhookService puede inyectar ConfigService.
  */
 @Module({
+  imports: [forwardRef(() => QuotesModule)],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersRepository, OrdersWebhookService],
   exports: [OrdersRepository],

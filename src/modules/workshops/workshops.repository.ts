@@ -57,9 +57,24 @@ export class WorkshopsRepository {
         LIMIT ${limit} OFFSET ${skip}
       `;
 
-      // Para los servicios y horas, necesitaremos hydrate o cargarlos por separado si es necesario
-      // pero por ahora devolvemos el listado base.
-      return workshops;
+      // Hydrate relations for raw query results
+      const ids = workshops.map(w => w.id);
+      if (ids.length === 0) return [];
+
+      const fullWorkshops = await this.prisma.workshop.findMany({
+        where: { id: { in: ids } },
+        include: {
+          services: true,
+          hours: true,
+          images: true
+        }
+      });
+
+      // Maintain the order and add distance
+      return workshops.map(w => {
+        const full = fullWorkshops.find(f => f.id === w.id);
+        return { ...full, distance: w.distance };
+      });
     }
 
     // Búsqueda estándar con Prisma

@@ -76,10 +76,8 @@ export class QuotesController {
     },
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() dto: CreateQuoteDto, @Req() req: Partial<AuthRequest>) {
-    // If a valid JWT is present (optional auth), link the quote to the user
-    const userId = req.user?.sub;
-    return this.quotesService.create(dto, userId);
+  create(@Body() dto: CreateQuoteDto) {
+    return this.quotesService.create(dto);
   }
 
   // ══════════════════════════════════════════════════════════════════════════

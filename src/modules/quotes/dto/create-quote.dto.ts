@@ -43,6 +43,19 @@ export class CreateQuoteDto {
   @IsString()
   @MaxLength(100)
   city?: string;
+  @ApiPropertyOptional({ example: 'Colombia', description: 'País de residencia' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  country?: string;
+  @ApiPropertyOptional({
+    example: 'ELE-2026-00001',
+    description: 'Código de seguimiento para vincular a un pedido existente',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  trackingCode?: string;
 
   // ─── Vehicle preference ─────────────────────────────────────────────────────
 

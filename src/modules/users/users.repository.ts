@@ -33,6 +33,21 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
+  /** Obtiene un usuario por su Email */
+  findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  /** Crea un nuevo usuario con rol de cliente (para vinculación automática) */
+  async createClient(data: { name: string; email: string; phone?: string; city?: string }) {
+    return this.prisma.user.create({
+      data: {
+        ...data,
+        role: UserRole.client,
+      },
+    });
+  }
+
   /** Actualiza campos editables del perfil (name, phone, city, avatarUrl) */
   update(id: number, data: Prisma.UserUpdateInput): Promise<User> {
     return this.prisma.user.update({ where: { id }, data });

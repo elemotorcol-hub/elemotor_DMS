@@ -6,10 +6,24 @@ import { QuoteStatus } from '@prisma/client';
 /**
  * UpdateQuoteDto — Admin-only DTO for PUT /api/quotes/:id.
  *
- * Allows updating status, assigned advisor, and internal notes.
- * Reference code, contact info and UTMs are immutable after creation.
+ * Allows updating status, assigned advisor, internal notes, and contact info.
+ * Reference code and UTMs remain immutable after creation.
  */
 export class UpdateQuoteDto {
+  @ApiPropertyOptional({ example: 'Juan Perez' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({ example: 'juan@example.com' })
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @ApiPropertyOptional({ example: '+573001234567' })
+  @IsOptional()
+  @IsString()
+  phone?: string;
   @ApiPropertyOptional({
     enum: QuoteStatus,
     example: QuoteStatus.contacted,
@@ -37,4 +51,22 @@ export class UpdateQuoteDto {
   @IsString()
   @MaxLength(5000)
   notes?: string;
+
+  @ApiPropertyOptional({
+    example: 'Elemotor Sedan',
+    description: 'Modelo de interés actualizado',
+  })
+  @IsOptional()
+  @IsString()
+  modelInterest?: string;
+
+  @ApiPropertyOptional({
+    example: 85000000,
+    description: 'Rango de presupuesto actualizado',
+  })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  budgetRange?: number;
 }

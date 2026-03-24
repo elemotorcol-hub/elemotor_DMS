@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { CalculatorSettingsService } from './calculator-settings.service';
 import { CreateElectricityRateDto, UpdateElectricityRateDto, CreateFuelPriceDto, UpdateFuelPriceDto } from './dto';
 
@@ -25,6 +26,7 @@ export class CalculatorSettingsController {
   // ─── Electricity Rates ───────────────────────────────────────────────────
 
   @Get('electricity')
+  @Public()
   @ApiOperation({ summary: 'Listar todas las tarifas de energía' })
   findAllElectricity() {
     return this.service.findAllElectricityRates();
@@ -55,6 +57,7 @@ export class CalculatorSettingsController {
   // ─── Fuel Prices ─────────────────────────────────────────────────────────
 
   @Get('fuel')
+  @Public()
   @ApiOperation({ summary: 'Listar todos los precios de combustible' })
   findAllFuel() {
     return this.service.findAllFuelPrices();

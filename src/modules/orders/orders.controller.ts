@@ -27,6 +27,7 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { QueryOrderDto } from './dto/query-order.dto';
 import { QueryMyOrderDto } from './dto/query-my-order.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { ITokenPayload } from '../auth/interfaces/token-payload.interface';
 
 /** Petición HTTP con el payload JWT inyectado por JwtAuthGuard */
@@ -37,8 +38,8 @@ interface AuthRequest {
 /**
  * OrdersController
  *
- * IMPORTANTE: las rutas estáticas (/my) deben declararse ANTES de las
- * rutas con parámetro dináico (:id) para evitar conflictos de enrutamiento.
+ * IMPORTANTE: las rutas estáticas (/my, /track) deben declararse ANTES de las
+ * rutas con parámetro dinámico (:id) para evitar conflictos de enrutamiento.
  */
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -149,6 +150,29 @@ export class OrdersController {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
+  // PUBLIC ENDPOINTS — sin autenticación
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /api/orders/track?trackingCode=ELE-2026-00001&identity=juan@email.com
+   * Endpoint público — busca un pedido por código + cédula/correo.
+   * No requiere JWT. Retorna 404 genérico si no coincide (no revela existencia).
+   */
+  @Get('track')
+  @Public()
+  @ApiOperation({ summary: '[Público] Rastrear pedido por código e identidad (cédula o email)' })
+  @ApiQuery({ name: 'trackingCode', required: true, type: String, example: 'ELE-2026-00001' })
+  @ApiQuery({ name: 'identity', required: true, type: String, example: 'juan@elemotor.co' })
+  @ApiResponse({ status: 200, description: 'Detalle del pedido con historial de estados' })
+  @ApiResponse({ status: 404, description: 'Pedido no encontrado o datos incorrectos' })
+  trackPublic(
+    @Query('trackingCode') trackingCode: string,
+    @Query('identity') identity: string,
+  ) {
+    return this.ordersService.trackPublicly(trackingCode, identity);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
   // CLIENT ENDPOINTS
   // ⚠️  Rutas estáticas PRIMERO: /my y /my/:id ANTES que /:id
   // ══════════════════════════════════════════════════════════════════════════
@@ -187,3 +211,5 @@ export class OrdersController {
     return this.ordersService.findMyOrder(id, req.user.sub);
   }
 }
+
+
