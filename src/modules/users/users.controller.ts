@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Put,
   Body,
   Param,
@@ -21,7 +22,7 @@ import {
 import { UserRole } from '@prisma/client';
 
 import { UsersService } from './users.service';
-import { UpdateProfileDto, ChangePasswordDto, QueryUsersDto, UpdateRoleDto } from './dto';
+import { UpdateProfileDto, ChangePasswordDto, QueryUsersDto, UpdateRoleDto, CreateUserDto } from './dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ITokenPayload } from '../auth/interfaces/token-payload.interface';
 
@@ -105,6 +106,22 @@ export class UsersController {
   // ══════════════════════════════════════════════════════════════════════════
   // ADMINISTRACIÓN — solo admin / super_admin
   // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * POST /api/users
+   * Crea un usuario empleado desde el panel admin.
+   * Solo para super_admin.
+   */
+  @Post()
+  @Roles(UserRole.super_admin)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: '[Super Admin] Crear usuario empleado' })
+  @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Email ya registrado o datos inválidos' })
+  @ApiResponse({ status: 403, description: 'Solo super_admin puede crear usuarios' })
+  createEmployee(@Body() dto: CreateUserDto) {
+    return this.usersService.createEmployee(dto);
+  }
 
   /**
    * GET /api/users

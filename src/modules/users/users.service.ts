@@ -13,6 +13,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { PaginatedResult } from '../../common/dto/pagination.dto';
 import { UploadService } from '../upload/upload.service';
 
@@ -132,6 +133,40 @@ export class UsersService {
 
     this.logger.log(`User #${userId} changed their password successfully`);
     return { message: 'Contraseña actualizada exitosamente. Por favor inicia sesión nuevamente.' };
+  }
+
+  // ─── Admin: crear empleado ────────────────────────────────────────────────
+
+  /**
+   * createEmployee — Crea un usuario empleado desde el panel admin.
+   * Solo ejecutable por super_admin (see controller).
+   */
+  async createEmployee(dto: CreateUserDto) {
+    const existing = await this.usersRepository.findByEmail(dto.email);
+    if (existing) throw new BadRequestException('Ya existe un usuario con ese email');
+
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
+
+    const user = await this.usersRepository.createEmployee({
+      name: dto.name,
+      email: dto.email,
+      phone: dto.phone,
+      passwordHash,
+      role: dto.role ?? UserRole.admin,
+      ...(dto.cedula && { cedula: dto.cedula }),
+      ...(dto.city && { city: dto.city }),
+    });
+
+    this.logger.log(`Employee user #${user.id} (${user.email}) created by super_admin`);
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      createdAt: user.createdAt,
+    };
   }
 
   // ─── Admin: listado ───────────────────────────────────────────────────────

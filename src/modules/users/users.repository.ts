@@ -48,6 +48,11 @@ export class UsersRepository {
     });
   }
 
+  /** Crea un usuario empleado desde el panel admin */
+  async createEmployee(data: Prisma.UserCreateInput): Promise<User> {
+    return this.prisma.user.create({ data });
+  }
+
   /** Actualiza campos editables del perfil (name, phone, city, avatarUrl) */
   update(id: number, data: Prisma.UserUpdateInput): Promise<User> {
     return this.prisma.user.update({ where: { id }, data });
