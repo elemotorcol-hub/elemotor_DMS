@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Read(//d/PROYECTOS/ELEMOTOR/elemotor_Web/**)",
+      "Bash(NEXT_PUBLIC_API_URL=https://elemotor.com.ec NEXT_PUBLIC_SITE_COUNTRY=EC npm run build)",
+      "Bash(NEXT_PUBLIC_API_URL=https://elemotor.com.co NEXT_PUBLIC_SITE_COUNTRY=CO npm run build)"
     ]
   }
 }

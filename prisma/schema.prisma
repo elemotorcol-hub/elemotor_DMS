@@ -164,6 +164,7 @@ model User {
   assignedQuotes       Quote[]               @relation("QuoteAssignedTo")
   quotes               Quote[]               @relation("QuoteUser")
   maintenanceRecords   MaintenanceRecord[]
+  posts                Post[]
 
   @@map("users")
 }
@@ -486,4 +487,28 @@ enum FuelType {
   regular
   premium
   diesel
+}
+
+enum PostStatus {
+  draft
+  published
+}
+
+model Post {
+  id            Int        @id @default(autoincrement())
+  slug          String     @unique @db.VarChar(255)
+  title         String     @db.VarChar(500)
+  excerpt       String?    @db.Text
+  content       String     @db.LongText
+  coverUrl      String?    @map("cover_url") @db.VarChar(500)
+  coverPublicId String?    @map("cover_public_id") @db.VarChar(255)
+  status        PostStatus @default(draft)
+  authorId      Int        @map("author_id")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  author        User       @relation(fields: [authorId], references: [id])
+
+  @@index([status])
+  @@index([authorId])
+  @@map("posts")
 }

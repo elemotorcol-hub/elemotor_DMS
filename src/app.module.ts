@@ -47,6 +47,7 @@ import { WorkshopsModule } from './modules/workshops/workshops.module';
 // ── Configuración / Calculadora ─────────────────────────
 import { CalculatorSettingsModule } from './modules/calculator-settings/calculator-settings.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
+import { BlogModule } from './modules/blog/blog.module';
 
 @Module({
   imports: [
@@ -99,6 +100,9 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 
     // Mantenimiento del cliente
     MaintenanceModule,
+
+    // Blog
+    BlogModule,
   ],
   providers: [
     // Guards globales: JwtAuthGuard + RolesGuard aplicados a TODOS los endpoints
