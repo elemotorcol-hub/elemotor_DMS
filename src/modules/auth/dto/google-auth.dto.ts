@@ -3,14 +3,14 @@ import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * DTO para autenticación con Google.
- * Recibe el ID Token generado por Google Sign-In en el frontend.
+ * Recibe el Access Token obtenido desde el cliente con @react-oauth/google.
  */
 export class GoogleAuthDto {
   @ApiProperty({
-    description: 'Google ID Token obtenido desde el cliente (google.accounts.id)',
-    example: 'eyJhbGciOiJSUzI1NiIsImtpZCI6...',
+    description: 'Google Access Token obtenido desde el cliente',
+    example: 'ya29.a0...',
   })
   @IsString()
   @IsNotEmpty()
-  idToken: string;
+  accessToken: string;
 }

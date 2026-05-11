@@ -26,6 +26,11 @@ export class QueryQuoteDto extends PaginationDto {
   @Type(() => Number)
   assignedToId?: number;
 
+  @ApiPropertyOptional({ example: 'juan@elemotor.co', description: 'Filtrar por email del solicitante' })
+  @IsOptional()
+  @IsString()
+  email?: string;
+
   @ApiPropertyOptional({ example: 'web', description: 'Filtrar por fuente (source)' })
   @IsOptional()
   @IsString()

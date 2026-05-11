@@ -160,16 +160,14 @@ export class OrdersController {
    */
   @Get('track')
   @Public()
-  @ApiOperation({ summary: '[Público] Rastrear pedido por código e identidad (cédula o email)' })
+  @ApiOperation({ summary: '[Público] Rastrear pedido por código de seguimiento' })
   @ApiQuery({ name: 'trackingCode', required: true, type: String, example: 'ELE-2026-00001' })
-  @ApiQuery({ name: 'identity', required: true, type: String, example: 'juan@elemotor.co' })
   @ApiResponse({ status: 200, description: 'Detalle del pedido con historial de estados' })
-  @ApiResponse({ status: 404, description: 'Pedido no encontrado o datos incorrectos' })
+  @ApiResponse({ status: 404, description: 'Pedido no encontrado' })
   trackPublic(
     @Query('trackingCode') trackingCode: string,
-    @Query('identity') identity: string,
   ) {
-    return this.ordersService.trackPublicly(trackingCode, identity);
+    return this.ordersService.trackPublicly(trackingCode);
   }
 
   // ══════════════════════════════════════════════════════════════════════════

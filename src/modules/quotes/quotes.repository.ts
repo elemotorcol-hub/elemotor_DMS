@@ -151,6 +151,7 @@ export class QuotesRepository {
     if (filters.status)       where.status       = filters.status;
     if (filters.assignedToId) where.assignedToId = filters.assignedToId;
     if (filters.source)       where.source       = filters.source;
+    if (filters.email)        where.email        = filters.email;
 
     if (filters.from || filters.to) {
       where.createdAt = {

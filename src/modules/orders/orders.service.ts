@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { OrdersRepository } from './orders.repository';
 import { OrdersWebhookService } from './webhook/orders-webhook.service';
 import { QuotesRepository } from '../quotes/quotes.repository';
@@ -18,6 +18,8 @@ import { PaginatedResult } from '../../common/dto/pagination.dto';
  */
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private readonly ordersRepository: OrdersRepository,
     private readonly webhookService: OrdersWebhookService,
@@ -160,38 +162,21 @@ export class OrdersService {
    * trackPublicly — Busca un pedido por código de seguimiento e identidad.
    * Si no coincide el código + identidad → 404 genérico (no revela existencia).
    */
-  async trackPublicly(trackingCode: string, identity: string) {
-    // 1. Buscamos el pedido por su código de seguimiento.
-    const order = await this.ordersRepository.findPublicDetail(trackingCode);
-    if (!order) {
-      throw new NotFoundException('No encontramos un pedido con ese código.');
-    }
-
-    // 2. Si el pedido TIENE un usuario asignado, validamos por identidad estándar (email/teléfono).
-    if (order.userId) {
-      const orderFull = await this.ordersRepository.findByTrackingCode(trackingCode, identity);
-      if (!orderFull) {
-        throw new NotFoundException(
-          'No encontramos un pedido con ese código y datos de identidad.',
-        );
+  async trackPublicly(trackingCode: string) {
+    try {
+      const order = await this.ordersRepository.findPublicDetail(trackingCode);
+      if (!order) {
+        throw new NotFoundException('No encontramos un pedido con ese código.');
       }
-      return orderFull;
-    }
-
-    // 3. Si el pedido NO TIENE usuario (anónimo), validamos que exista una QUOTE coincidente.
-    // El cliente debe proporcionar el correo que usó en la cotización.
-    const validQuote = await this.quotesRepository.findByTrackingCodeAndEmail(
-      trackingCode,
-      identity,
-    );
-
-    if (!validQuote) {
-      throw new NotFoundException(
-        'No se encontró una cotización válida vinculada a este código y correo.',
+      return order;
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      this.logger.error('trackPublicly ERROR:', error instanceof Error ? error.stack : String(error));
+      throw new HttpException(
+        { message: 'Error al rastrear pedido', detail: error instanceof Error ? error.message : String(error) },
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-
-    return order;
   }
 
   /**

@@ -106,27 +106,29 @@ export class AuthService implements IAuthService {
   // ─────────────────────────────────────────────────────────────────
 
   async googleAuth(dto: GoogleAuthDto): Promise<IAuthResponse> {
-    const clientId = this.config.get<string>('google.clientId');
-
     let email: string;
     let name: string;
     let googleId: string;
     let avatarUrl: string | undefined;
 
     try {
-      const ticket = await this.googleClient.verifyIdToken({
-        idToken: dto.idToken,
-        audience: clientId,
+      const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${dto.accessToken}` },
       });
 
-      const payload = ticket.getPayload();
-      if (!payload?.email || !payload?.sub) {
+      if (!res.ok) {
+        throw new UnauthorizedException('Token de Google inválido o expirado');
+      }
+
+      const payload = await res.json() as { id?: string; email?: string; name?: string; picture?: string };
+
+      if (!payload?.email || !payload?.id) {
         throw new UnauthorizedException('Token de Google inválido o expirado');
       }
 
       email = payload.email;
       name = payload.name ?? email.split('@')[0];
-      googleId = payload.sub;
+      googleId = payload.id;
       avatarUrl = payload.picture;
     } catch {
       throw new UnauthorizedException('Token de Google inválido o expirado');
