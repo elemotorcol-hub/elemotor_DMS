@@ -5,6 +5,7 @@ import {
   IsInt,
   IsEnum,
   IsNumber,
+  IsUrl,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -67,6 +68,11 @@ export class CreateModelDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @ApiPropertyOptional({ description: 'URL del video oficial del modelo (mp4 u otro formato directo)' })
+  @IsOptional()
+  @IsUrl()
+  videoUrl?: string;
 
   @ApiPropertyOptional({ type: () => [NestedTrimDto] })
   @IsOptional()

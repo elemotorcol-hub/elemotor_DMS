@@ -167,6 +167,7 @@ export class ModelsRepository {
             spec: true,
             colors: { orderBy: { type: 'asc' } },
             images: { orderBy: { sortOrder: 'asc' } },
+            models3d: { select: { id: true } },
           },
         },
       },
