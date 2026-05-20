@@ -83,6 +83,21 @@ export class CreateQuoteDto {
   @Type(() => Number)
   budgetRange?: number;
 
+  @ApiPropertyOptional({ example: 'Blanco', description: 'Color de interés del vehículo' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  color?: string;
+
+  @ApiPropertyOptional({
+    example: 'credito_banco',
+    description: 'Forma de pago preferida (credito_banco, recursos_propios, no_definido)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  paymentMethod?: string;
+
   // ─── Communication ──────────────────────────────────────────────────────────
 
   @ApiProperty({

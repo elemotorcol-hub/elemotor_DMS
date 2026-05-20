@@ -243,6 +243,8 @@ model Quote {
   trimId           Int?             @map("trim_id")
   modelInterest    String?          @map("model_interest") @db.VarChar(255)
   budgetRange      Decimal?         @map("budget_range") @db.Decimal(15, 2)
+  color            String?          @db.VarChar(100)
+  paymentMethod    String?          @map("payment_method") @db.VarChar(100)
   preferredChannel PreferredChannel @map("preferred_channel")
   message          String?          @db.Text
   notes            String?          @db.Text

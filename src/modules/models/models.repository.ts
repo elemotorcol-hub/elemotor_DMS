@@ -20,11 +20,10 @@ export const MODEL_LIST_SELECT = {
     select: { id: true, name: true, slug: true, logoUrl: true },
   },
   _count: { select: { trims: true } },
-  // First active trim — provides specs and primary image for the public catalog card
+  // Active trims — provides specs, primary image and colors for catalog/quote
   trims: {
     where: { active: true },
     orderBy: { price: 'asc' as const },
-    take: 1,
     select: {
       id: true,
       name: true,
@@ -54,6 +53,16 @@ export const MODEL_LIST_SELECT = {
         select: {
           url: true,
           altText: true,
+          type: true,
+        },
+      },
+      colors: {
+        where: { type: 'exterior' },
+        orderBy: { name: 'asc' as const },
+        select: {
+          id: true,
+          name: true,
+          hexCode: true,
           type: true,
         },
       },
