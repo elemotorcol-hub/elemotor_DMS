@@ -107,6 +107,20 @@ export class UsersRepository {
     return this.prisma.user.count({ where: { role: UserRole.super_admin } });
   }
 
+  // ─── Asesores públicos ────────────────────────────────────────────────────
+
+  /**
+   * findAdvisors — Lista usuarios con rol admin o super_admin.
+   * Solo expone id y nombre (endpoint público para el formulario de cotización).
+   */
+  findAdvisors(): Promise<{ id: number; name: string }[]> {
+    return this.prisma.user.findMany({
+      where: { role: { in: [UserRole.admin, UserRole.super_admin] } },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
+    });
+  }
+
   // ─── Helpers privados ─────────────────────────────────────────────────────
 
   private buildWhere(

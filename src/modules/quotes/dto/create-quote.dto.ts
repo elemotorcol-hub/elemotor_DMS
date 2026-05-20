@@ -83,6 +83,13 @@ export class CreateQuoteDto {
   @Type(() => Number)
   budgetRange?: number;
 
+  @ApiPropertyOptional({ example: 3, description: 'ID del asesor asignado' })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  assignedToId?: number;
+
   @ApiPropertyOptional({ example: 'Blanco', description: 'Color de interés del vehículo' })
   @IsOptional()
   @IsString()

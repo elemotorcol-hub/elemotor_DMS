@@ -190,6 +190,13 @@ export class UsersService {
     };
   }
 
+  // ─── Asesores públicos ────────────────────────────────────────────────────
+
+  /** getAdvisors — Lista asesores (admin + super_admin) para el formulario público. */
+  getAdvisors() {
+    return this.usersRepository.findAdvisors();
+  }
+
   // ─── Admin: cambio de rol ─────────────────────────────────────────────────
 
   /**

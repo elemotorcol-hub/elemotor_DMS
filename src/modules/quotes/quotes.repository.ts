@@ -122,6 +122,7 @@ export class QuotesRepository {
     return this.prisma.quote.create({
       data: {
         userId:          userId ?? null,
+        assignedToId:    dto.assignedToId ?? null,
         name:            dto.name,
         email:           dto.email,
         phone:           dto.phone,

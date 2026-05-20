@@ -24,6 +24,7 @@ import { UserRole } from '@prisma/client';
 import { UsersService } from './users.service';
 import { UpdateProfileDto, ChangePasswordDto, QueryUsersDto, UpdateRoleDto, CreateUserDto } from './dto';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { ITokenPayload } from '../auth/interfaces/token-payload.interface';
 
 interface AuthRequest {
@@ -101,6 +102,23 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Contraseña actual incorrecta' })
   changePassword(@Body() dto: ChangePasswordDto, @Req() req: AuthRequest) {
     return this.usersService.changePassword(req.user.sub, dto);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PÚBLICO — sin autenticación
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /api/users/advisors
+   * Lista asesores disponibles (admin + super_admin) para el formulario de cotización.
+   * Endpoint público — solo retorna id y nombre.
+   */
+  @Get('advisors')
+  @Public()
+  @ApiOperation({ summary: '[Público] Listar asesores disponibles' })
+  @ApiResponse({ status: 200, description: 'Lista de asesores' })
+  getAdvisors() {
+    return this.usersService.getAdvisors();
   }
 
   // ══════════════════════════════════════════════════════════════════════════
