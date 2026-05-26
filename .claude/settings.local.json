@@ -1,22 +1,8 @@
 {
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
-      "Bash(xargs grep:*)",
-      "Read(//d/PROYECTOS/ELEMOTOR/elemotor_Web/**)",
-      "Bash(NEXT_PUBLIC_API_URL=https://elemotor.com.ec NEXT_PUBLIC_SITE_COUNTRY=EC npm run build)",
-      "Bash(NEXT_PUBLIC_API_URL=https://elemotor.com.co NEXT_PUBLIC_SITE_COUNTRY=CO npm run build)",
-      "Bash(find D:PROYECTOSELEMOTORelemotor_Websrc -name *taller* -o -name *workshop* -o -name *Workshop*)",
-      "Bash(find D:PROYECTOSELEMOTORelemotor_Websrc -name *track* -o -name *rastr* -o -name *seguimiento*)",
-      "Bash(grep -rl \"track\\\\|identity\" D:PROYECTOSELEMOTORelemotor_DMSsrc --include=*.ts)",
-      "Bash(npm run:*)",
-      "Bash(powershell -Command \"Compress-Archive -Path ''.next'' -DestinationPath ''dist_co.zip'' -Force\")",
-      "Bash(powershell -Command \"Compress-Archive -Path ''dist\\\\src'' -DestinationPath ''dist_backend.zip'' -Force\")",
-      "Bash(powershell -Command \"& { $src = ''.next''; $dst = ''dist_co.zip''; if \\(Test-Path $dst\\) { Remove-Item $dst }; Add-Type -Assembly ''System.IO.Compression.FileSystem''; [System.IO.Compression.ZipFile]::CreateFromDirectory\\(\\(Resolve-Path $src\\), \\(Join-Path \\(Get-Location\\) $dst\\)\\) }\")",
-      "Bash(NEXT_PUBLIC_SITE_COUNTRY=EC npm run build)",
-      "Bash(npm install:*)",
-      "Bash(curl:*)",
-      "Bash(ls src/**/*.spec.ts)",
-      "Bash(ls src/**/*.test.*)"
+      "Read(//d/PROYECTOS/ELEMOTOR/elemotor_Web/**)"
     ]
   }
 }

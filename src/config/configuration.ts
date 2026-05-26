@@ -32,6 +32,7 @@ export default () => ({
     user: process.env.MAIL_USER ?? '',
     pass: process.env.MAIL_PASS ?? '',
     from: process.env.MAIL_FROM ?? 'EleMotor DMS <noreply@elemotor.co>',
+    appointmentsTo: process.env.APPOINTMENTS_NOTIFY_EMAIL ?? '',
   },
   otp: {
     provider: process.env.OTP_PROVIDER ?? 'mock',

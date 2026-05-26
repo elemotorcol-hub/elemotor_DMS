@@ -48,6 +48,7 @@ import { WorkshopsModule } from './modules/workshops/workshops.module';
 import { CalculatorSettingsModule } from './modules/calculator-settings/calculator-settings.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { BlogModule } from './modules/blog/blog.module';
+import { AppointmentsModule } from './modules/appointments/appointments.module';
 
 @Module({
   imports: [
@@ -103,6 +104,9 @@ import { BlogModule } from './modules/blog/blog.module';
 
     // Blog
     BlogModule,
+
+    // Citas de mantenimiento (público, sin auth)
+    AppointmentsModule,
   ],
   providers: [
     // Guards globales: JwtAuthGuard + RolesGuard aplicados a TODOS los endpoints

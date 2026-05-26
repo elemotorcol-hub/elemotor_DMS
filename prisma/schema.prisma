@@ -33,10 +33,12 @@ model Model {
   basePrice   Decimal?  @map("base_price") @db.Decimal(15, 2)
   featured    Boolean   @default(false)
   active      Boolean   @default(true)
-  videoUrl    String?   @map("video_url") @db.VarChar(2048)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  brand       Brand     @relation(fields: [brandId], references: [id])
+  videoUrl          String?   @map("video_url") @db.VarChar(2048)
+  datasheetUrl      String?   @map("datasheet_url") @db.VarChar(500)
+  datasheetPublicId String?   @map("datasheet_public_id") @db.VarChar(255)
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  brand             Brand     @relation(fields: [brandId], references: [id])
   quotes      Quote[]
   trims       Trim[]
 
@@ -313,6 +315,7 @@ model Workshop {
   images             WorkshopImage[]
   services           WorkshopService[]
   maintenanceRecords MaintenanceRecord[]
+  appointments       Appointment[]
 
   @@map("workshops")
 }
@@ -373,6 +376,25 @@ model WorkshopImage {
 
   @@index([workshopId])
   @@map("workshop_images")
+}
+
+model Appointment {
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(255)
+  email         String    @db.VarChar(255)
+  phone         String    @db.VarChar(50)
+  workshopId    Int?      @map("workshop_id")
+  preferredDate DateTime  @map("preferred_date") @db.Date
+  preferredTime String?   @map("preferred_time") @db.VarChar(10)
+  serviceType   String    @map("service_type") @db.VarChar(100)
+  notes         String?   @db.Text
+  status        String    @default("pending") @db.VarChar(50)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  workshop      Workshop? @relation(fields: [workshopId], references: [id])
+
+  @@index([workshopId])
+  @@index([email])
+  @@map("appointments")
 }
 
 model ElectricityRate {

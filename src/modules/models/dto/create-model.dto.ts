@@ -8,6 +8,7 @@ import {
   IsUrl,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ModelType } from '@prisma/client';
@@ -73,6 +74,20 @@ export class CreateModelDto {
   @IsOptional()
   @IsUrl()
   videoUrl?: string;
+
+  @ApiPropertyOptional({ description: 'URL pública de la ficha técnica en Cloudinary (PDF). Enviar null para eliminar.' })
+  @IsOptional()
+  @ValidateIf((o) => o.datasheetUrl !== null)
+  @IsUrl()
+  @MaxLength(500)
+  datasheetUrl?: string | null;
+
+  @ApiPropertyOptional({ description: 'Public ID de Cloudinary para la ficha técnica. Enviar null para eliminar.' })
+  @IsOptional()
+  @ValidateIf((o) => o.datasheetPublicId !== null)
+  @IsString()
+  @MaxLength(255)
+  datasheetPublicId?: string | null;
 
   @ApiPropertyOptional({ type: () => [NestedTrimDto] })
   @IsOptional()

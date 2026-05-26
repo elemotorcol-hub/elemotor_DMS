@@ -83,7 +83,9 @@ export class UploadService {
     type: FileUploadType.MODEL_3D | FileUploadType.DOCUMENT,
   ): Promise<UploadResultDto> {
     validateFile(file, type);
-    const resourceType = type === FileUploadType.DOCUMENT ? 'image' : 'raw';
+    // PDFs como 'raw' para preservar los bytes originales del archivo
+    // GLB como 'raw'
+    const resourceType = 'raw';
     return this.streamToCloudinary(file, type, resourceType);
   }
 
@@ -165,9 +167,9 @@ export class UploadService {
         {
           folder,
           resource_type: resourceType,
-          use_filename: true, // Usa el nombre que le pasamos
+          use_filename: true,
           filename_override: sanitizedName,
-          unique_filename: true, // Cloudinary le añadirá un sufijo aleatorio para evitar colisiones
+          unique_filename: true,
           overwrite: false,
         },
         (error, result) => {

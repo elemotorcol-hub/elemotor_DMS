@@ -16,6 +16,7 @@ export const MODEL_LIST_SELECT = {
   featured: true,
   active: true,
   createdAt: true,
+  datasheetUrl: true,
   brand: {
     select: { id: true, name: true, slug: true, logoUrl: true },
   },
@@ -65,6 +66,9 @@ export const MODEL_LIST_SELECT = {
           hexCode: true,
           type: true,
         },
+      },
+      models3d: {
+        select: { id: true },
       },
     },
   },

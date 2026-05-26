@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   UploadedFile,
   UseInterceptors,
@@ -10,7 +11,10 @@ import {
   HttpStatus,
   ParseEnumPipe,
   BadRequestException,
+  Res,
+  InternalServerErrorException,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -26,6 +30,7 @@ import {
 import { UploadService } from './upload.service';
 import { UploadResultDto } from './dto/upload-result.dto';
 import { FileUploadType } from './upload.validators';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('upload')
 @ApiBearerAuth()
@@ -175,5 +180,49 @@ export class UploadController {
     }
     await this.uploadService.deleteFile(publicId, resourceType);
     return { message: 'Archivo eliminado' };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GET /api/upload/pdf-download
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Proxy público para descargar PDFs desde Cloudinary.
+   * Sirve el archivo con Content-Disposition: attachment para forzar descarga.
+   */
+  @Get('pdf-download')
+  @Public()
+  @ApiOperation({ summary: '[Público] Descargar PDF desde Cloudinary' })
+  @ApiQuery({ name: 'url', required: true, type: String })
+  @ApiResponse({ status: 200, description: 'PDF descargado exitosamente.' })
+  async downloadPdf(
+    @Query('url') url: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    if (!url || !url.startsWith('https://res.cloudinary.com/')) {
+      throw new BadRequestException('URL inválida');
+    }
+
+    let pdfBuffer: ArrayBuffer;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new InternalServerErrorException('No se pudo obtener el PDF');
+      }
+      pdfBuffer = await response.arrayBuffer();
+    } catch {
+      throw new InternalServerErrorException('Error al descargar el PDF');
+    }
+
+    const filename = url.split('/').pop()?.split('?')[0] ?? 'ficha-tecnica.pdf';
+    const safeFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${safeFilename}"`,
+      'Content-Length': pdfBuffer.byteLength.toString(),
+      'Cache-Control': 'public, max-age=86400',
+    });
+    res.end(Buffer.from(pdfBuffer));
   }
 }
