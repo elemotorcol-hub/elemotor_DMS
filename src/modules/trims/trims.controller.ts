@@ -96,4 +96,18 @@ export class TrimsController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.trimsService.remove(id);
   }
+
+  @Delete(':id/permanent')
+  @Roles(UserRole.admin, UserRole.super_admin)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Eliminar un trim permanentemente (hard delete irreversible)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 204, description: 'Trim eliminado permanentemente' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
+  @ApiResponse({ status: 404, description: 'Trim no encontrado' })
+  hardRemove(@Param('id', ParseIntPipe) id: number) {
+    return this.trimsService.hardRemove(id);
+  }
 }

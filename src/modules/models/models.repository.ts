@@ -433,4 +433,9 @@ export class ModelsRepository {
       data: { active: false },
     });
   }
+
+  /** hardDelete — Eliminación física irreversible del modelo. */
+  async hardDelete(id: number) {
+    return this.prisma.model.delete({ where: { id } });
+  }
 }

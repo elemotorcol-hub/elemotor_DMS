@@ -90,4 +90,14 @@ export class TrimsRepository {
       data: { active: false },
     });
   }
+
+  async hardDelete(id: number) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.image.deleteMany({ where: { trimId: id } });
+      await tx.color.deleteMany({ where: { trimId: id } });
+      await tx.spec.deleteMany({ where: { trimId: id } });
+      await tx.model3d.deleteMany({ where: { trimId: id } });
+      return tx.trim.delete({ where: { id } });
+    });
+  }
 }

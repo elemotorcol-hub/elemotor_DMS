@@ -129,4 +129,18 @@ export class ModelsController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.modelsService.remove(id);
   }
+
+  @Delete(':id/permanent')
+  @Roles(UserRole.admin, UserRole.super_admin)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '[Admin] Eliminar un modelo permanentemente (hard delete irreversible)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 204, description: 'Modelo eliminado permanentemente' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 403, description: 'Sin permisos suficientes' })
+  @ApiResponse({ status: 404, description: 'Modelo no encontrado' })
+  hardRemove(@Param('id', ParseIntPipe) id: number) {
+    return this.modelsService.hardRemove(id);
+  }
 }

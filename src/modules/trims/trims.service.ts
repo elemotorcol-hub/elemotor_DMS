@@ -98,6 +98,11 @@ export class TrimsService {
     return this.trimsRepository.softDelete(id);
   }
 
+  async hardRemove(id: number) {
+    await this.assertTrimExists(id);
+    return this.trimsRepository.hardDelete(id);
+  }
+
   private async assertTrimExists(id: number): Promise<void> {
     const trim = await this.trimsRepository.findByIdAdmin(id);
     if (!trim) {

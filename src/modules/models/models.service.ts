@@ -116,6 +116,15 @@ export class ModelsService {
     return this.modelsRepository.softDelete(id);
   }
 
+  /** Hard delete — eliminación física irreversible sin verificar trims activos. */
+  async hardRemove(id: number) {
+    const model = await this.modelsRepository.findByIdAdmin(id);
+    if (!model) {
+      throw new NotFoundException(`Model #${id} not found`);
+    }
+    return this.modelsRepository.hardDelete(id);
+  }
+
   /** Assert that a brand exists; throws BadRequestException otherwise. */
   private async assertBrandExists(brandId: number): Promise<void> {
     const brand = await this.modelsRepository.findBrandById(brandId);

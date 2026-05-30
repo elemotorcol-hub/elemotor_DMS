@@ -1,8 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { AppointmentsRepository } from './appointments.repository';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { QueryAppointmentsDto } from './dto/query-appointments.dto';
+import { UpdateAppointmentStatusDto } from './dto/update-appointment-status.dto';
 
 @Injectable()
 export class AppointmentsService {
@@ -12,6 +14,26 @@ export class AppointmentsService {
     private readonly repo: AppointmentsRepository,
     private readonly config: ConfigService,
   ) {}
+
+  async findAll(query: QueryAppointmentsDto) {
+    return this.repo.findMany(query);
+  }
+
+  async findOne(id: number) {
+    const appointment = await this.repo.findById(id);
+    if (!appointment) throw new NotFoundException(`Appointment #${id} not found`);
+    return appointment;
+  }
+
+  async updateStatus(id: number, dto: UpdateAppointmentStatusDto) {
+    await this.findOne(id);
+    return this.repo.updateStatus(id, dto.status);
+  }
+
+  async remove(id: number) {
+    await this.findOne(id);
+    return this.repo.hardDelete(id);
+  }
 
   async create(dto: CreateAppointmentDto) {
     const appointment = await this.repo.create(dto);
