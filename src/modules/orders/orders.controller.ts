@@ -234,6 +234,27 @@ export class OrdersController {
   findMyOrder(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.ordersService.findMyOrder(id, req.user.sub);
   }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // ADMIN: detalle por ID — debe ir DESPUÉS de todas las rutas estáticas
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * GET /api/orders/:id
+   * Detalle completo de un pedido para el panel admin.
+   * Incluye historial de estados, registros de mantenimiento y documentos.
+   */
+  @Get(':id')
+  @Roles(UserRole.admin, UserRole.super_admin)
+  @ApiOperation({ summary: '[Admin] Detalle completo de un pedido' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Pedido con historial, mantenimientos y documentos' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 403, description: 'Sin permisos de administrador' })
+  @ApiResponse({ status: 404, description: 'Pedido no encontrado' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.findOne(id);
+  }
 }
 
 

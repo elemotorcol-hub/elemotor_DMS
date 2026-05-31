@@ -161,6 +161,24 @@ export class UsersController {
   }
 
   /**
+   * GET /api/users/:id
+   * Perfil completo de un usuario para el panel admin.
+   * Incluye pedidos asociados (sin campos sensibles: passwordHash, refreshToken, etc.).
+   * Debe declararse ANTES de PUT /:id/role para evitar conflictos de ruta.
+   */
+  @Get(':id')
+  @Roles(UserRole.admin, UserRole.super_admin)
+  @ApiOperation({ summary: '[Admin] Perfil de cliente con sus pedidos' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID del usuario' })
+  @ApiResponse({ status: 200, description: 'Perfil del usuario con pedidos asociados' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 403, description: 'Sin permisos de administrador' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findOne(id);
+  }
+
+  /**
    * PUT /api/users/:id/role
    * Cambia el rol de un usuario.
    * Solo para super_admin. Protege al último super_admin del sistema.

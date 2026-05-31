@@ -169,6 +169,14 @@ export class UsersService {
     };
   }
 
+  // ─── Admin: detalle de usuario ───────────────────────────────────────────
+
+  async findOne(id: number) {
+    const user = await this.usersRepository.findByIdAdmin(id);
+    if (!user) throw new NotFoundException(`Usuario #${id} no encontrado`);
+    return user;
+  }
+
   // ─── Admin: listado ───────────────────────────────────────────────────────
 
   /**

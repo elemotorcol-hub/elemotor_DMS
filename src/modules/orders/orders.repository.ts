@@ -274,14 +274,15 @@ export class OrdersRepository {
     return this.prisma.order.count({ where: this.buildWhere(filters) });
   }
 
-  /** findByIdAdmin — Detalle completo para admin */
+  /** findByIdAdmin — Detalle completo para admin: historial, mantenimientos y documentos */
   async findByIdAdmin(id: number) {
     return this.prisma.order.findUnique({
       where: { id },
       select: {
         ...ORDER_LIST_SELECT,
+        user: { select: { id: true, name: true, email: true, phone: true } },
         statusHistory: {
-          orderBy: { date: 'asc' },
+          orderBy: { date: 'asc' as const },
           select: {
             id: true,
             previousStatus: true,
@@ -289,6 +290,29 @@ export class OrdersRepository {
             description: true,
             date: true,
             updatedBy: { select: { id: true, name: true } },
+          },
+        },
+        maintenanceRecords: {
+          orderBy: { date: 'asc' as const },
+          select: {
+            id: true,
+            date: true,
+            type: true,
+            rating: true,
+            comment: true,
+            cost: true,
+            createdAt: true,
+            workshop: { select: { id: true, name: true } },
+          },
+        },
+        documents: {
+          select: {
+            id: true,
+            type: true,
+            name: true,
+            fileUrl: true,
+            uploadedBy: true,
+            createdAt: true,
           },
         },
       },

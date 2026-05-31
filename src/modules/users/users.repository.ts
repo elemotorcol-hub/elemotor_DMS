@@ -107,6 +107,51 @@ export class UsersRepository {
     return this.prisma.user.count({ where: { role: UserRole.super_admin } });
   }
 
+  // ─── Admin: detalle de usuario ────────────────────────────────────────────
+
+  /**
+   * findByIdAdmin — Perfil completo de un usuario para el panel admin.
+   * Excluye campos sensibles (passwordHash, refreshToken, OTP, reset tokens).
+   * Incluye los pedidos asociados con info básica del vehículo.
+   */
+  async findByIdAdmin(id: number) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        cedula: true,
+        city: true,
+        role: true,
+        avatarUrl: true,
+        emailVerifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        orders: {
+          orderBy: { createdAt: 'desc' as const },
+          select: {
+            id: true,
+            trackingCode: true,
+            status: true,
+            estimatedDelivery: true,
+            createdAt: true,
+            trim: {
+              select: {
+                name: true,
+                model: {
+                  select: { name: true, brand: { select: { name: true } } },
+                },
+              },
+            },
+            color: { select: { name: true } },
+          },
+        },
+      },
+    });
+  }
+
   // ─── Asesores públicos ────────────────────────────────────────────────────
 
   /**
