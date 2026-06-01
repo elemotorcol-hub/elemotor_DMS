@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMaintenanceDto } from './dto/create-maintenance.dto';
+import { QueryAdminMaintenanceDto } from './dto/query-admin-maintenance.dto';
 
 const MAINTENANCE_SELECT = {
   id: true,
@@ -13,7 +14,17 @@ const MAINTENANCE_SELECT = {
   cost: true,
   createdAt: true,
   workshop: {
-    select: { id: true, name: true, city: true },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      city: true,
+      state: true,
+      latitude: true,
+      longitude: true,
+      googleMapsUrl: true,
+      phone: true,
+    },
   },
 } as const;
 
@@ -73,6 +84,66 @@ export class MaintenanceRepository {
   async getSummary(userId: number, orderId: number) {
     const result = await this.prisma.maintenanceRecord.aggregate({
       where: { userId, orderId },
+      _sum: { cost: true },
+      _count: { id: true },
+    });
+
+    return {
+      totalCost: Number(result._sum.cost ?? 0),
+      totalRecords: result._count.id,
+    };
+  }
+
+  /**
+   * [Admin] Lista todos los registros de mantenimiento de un cliente con filtros opcionales.
+   * Incluye datos de geolocalización del taller para la vista de mapa.
+   */
+  async findAllByClient(
+    userId: number,
+    query: QueryAdminMaintenanceDto,
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const where = {
+      userId,
+      ...(query.orderId ? { orderId: query.orderId } : {}),
+      ...(query.type ? { type: { contains: query.type } } : {}),
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.maintenanceRecord.findMany({
+        where,
+        orderBy: { date: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          ...MAINTENANCE_SELECT,
+          order: {
+            select: {
+              id: true,
+              trackingCode: true,
+              trim: {
+                select: {
+                  name: true,
+                  model: { select: { name: true, brand: { select: { name: true } } } },
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.maintenanceRecord.count({ where }),
+    ]);
+
+    return { data, total };
+  }
+
+  /** [Admin] Resumen de costos de mantenimiento para un cliente (todos sus pedidos) */
+  async getSummaryByClient(userId: number) {
+    const result = await this.prisma.maintenanceRecord.aggregate({
+      where: { userId },
       _sum: { cost: true },
       _count: { id: true },
     });

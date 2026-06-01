@@ -9,6 +9,7 @@ import { MaintenanceRepository } from './maintenance.repository';
 import { OrdersRepository } from '../orders/orders.repository';
 import { CreateMaintenanceDto } from './dto/create-maintenance.dto';
 import { QueryMaintenanceDto } from './dto/query-maintenance.dto';
+import { QueryAdminMaintenanceDto } from './dto/query-admin-maintenance.dto';
 
 @Injectable()
 export class MaintenanceService {
@@ -83,5 +84,43 @@ export class MaintenanceService {
    */
   async getSummary(userId: number, orderId: number) {
     return this.maintenanceRepository.getSummary(userId, orderId);
+  }
+
+  // ══════════════════════════════════════════════════════
+  // ADMIN
+  // ══════════════════════════════════════════════════════
+
+  /**
+   * findClientRecords — [Admin] Historial completo de mantenimiento de un cliente.
+   * Incluye datos de taller con lat/lng para la vista de mapa.
+   * Lanza NotFoundException si el cliente no existe.
+   */
+  async findClientRecords(clientId: number, query: QueryAdminMaintenanceDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 50;
+
+    const { data, total } = await this.maintenanceRepository.findAllByClient(
+      clientId,
+      query,
+      page,
+      limit,
+    );
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * getClientSummary — [Admin] Resumen total de costos de mantenimiento de un cliente.
+   */
+  async getClientSummary(clientId: number) {
+    return this.maintenanceRepository.getSummaryByClient(clientId);
   }
 }
