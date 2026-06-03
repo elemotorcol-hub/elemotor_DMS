@@ -164,6 +164,21 @@ export class QuotesController {
   }
 
   /**
+   * GET /api/quotes/public/:referenceCode
+   * Público — documento de cotización para enviar al cliente.
+   * Retorna datos completos del vehículo/trim/spec sin campos sensibles (email, teléfono).
+   */
+  @Get('public/:referenceCode')
+  @Public()
+  @ApiOperation({ summary: '[Público] Documento de cotización por código de referencia' })
+  @ApiParam({ name: 'referenceCode', type: String, description: 'Ej: COT-2026-00001' })
+  @ApiResponse({ status: 200, description: 'Documento de cotización con datos del vehículo' })
+  @ApiResponse({ status: 404, description: 'Cotización no encontrada' })
+  findPublic(@Param('referenceCode') referenceCode: string) {
+    return this.quotesService.findPublic(referenceCode);
+  }
+
+  /**
    * GET /api/quotes/:id
    * Admin only — full detail including model relation.
    */

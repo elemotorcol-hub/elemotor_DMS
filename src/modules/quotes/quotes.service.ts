@@ -141,4 +141,16 @@ export class QuotesService {
   async getStats() {
     return this.quotesRepository.getStats();
   }
+
+  // ─── Public quote document ────────────────────────────────────────────────
+
+  /**
+   * findPublic — Retorna la cotización pública por referenceCode.
+   * No expone email ni teléfono del cliente.
+   */
+  async findPublic(referenceCode: string) {
+    const quote = await this.quotesRepository.findByReferenceCodePublic(referenceCode);
+    if (!quote) throw new NotFoundException(`Cotización ${referenceCode} no encontrada`);
+    return quote;
+  }
 }

@@ -1,8 +1,8 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { ModelsRepository, MODEL_LIST_SELECT } from './models.repository';
@@ -97,32 +97,35 @@ export class ModelsService {
   }
 
   /**
-   * Soft delete — sets active = false.
-   * Validates that no active trims are linked before deactivating.
+   * Soft delete — sets active = false on the model and all its trims.
    */
   async remove(id: number) {
     const model = await this.modelsRepository.findByIdAdmin(id);
     if (!model) {
       throw new NotFoundException(`Model #${id} not found`);
     }
-
-    const activeTrimsCount = await this.modelsRepository.countActiveTrims(id);
-    if (activeTrimsCount > 0) {
-      throw new ConflictException(
-        `Model #${id} has ${activeTrimsCount} active trim(s). Deactivate them first.`,
-      );
-    }
-
-    return this.modelsRepository.softDelete(id);
+    return this.modelsRepository.softDeleteWithTrims(id);
   }
 
-  /** Hard delete — eliminación física irreversible sin verificar trims activos. */
+  /** Hard delete — eliminación física irreversible. Cascada manual a trims y sus relaciones. */
   async hardRemove(id: number) {
     const model = await this.modelsRepository.findByIdAdmin(id);
     if (!model) {
       throw new NotFoundException(`Model #${id} not found`);
     }
-    return this.modelsRepository.hardDelete(id);
+    try {
+      return await this.modelsRepository.hardDelete(id);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new ConflictException(
+          `No se puede eliminar el modelo #${id} porque algunas de sus versiones tienen órdenes o cotizaciones vinculadas. Desactívalo en su lugar.`,
+        );
+      }
+      throw error;
+    }
   }
 
   /** Assert that a brand exists; throws BadRequestException otherwise. */

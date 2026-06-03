@@ -434,8 +434,38 @@ export class ModelsRepository {
     });
   }
 
-  /** hardDelete — Eliminación física irreversible del modelo. */
+  /**
+   * softDeleteWithTrims — Desactiva el modelo y todas sus versiones en una sola transacción.
+   * No elimina ningún registro físicamente; es seguro aunque haya órdenes/cotizaciones.
+   */
+  async softDeleteWithTrims(id: number) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.trim.updateMany({ where: { modelId: id }, data: { active: false } });
+      return tx.model.update({ where: { id }, data: { active: false } });
+    });
+  }
+
+  /**
+   * hardDelete — Eliminación física irreversible.
+   * Elimina todas las relaciones hijo de cada trim (imágenes, colores, spec, modelo3d)
+   * antes de eliminar los trims y el modelo.
+   * Lanza error si algún trim tiene órdenes o cotizaciones vinculadas.
+   */
   async hardDelete(id: number) {
-    return this.prisma.model.delete({ where: { id } });
+    return this.prisma.$transaction(async (tx) => {
+      const trimIds = (
+        await tx.trim.findMany({ where: { modelId: id }, select: { id: true } })
+      ).map((t) => t.id);
+
+      if (trimIds.length > 0) {
+        await tx.image.deleteMany({ where: { trimId: { in: trimIds } } });
+        await tx.color.deleteMany({ where: { trimId: { in: trimIds } } });
+        await tx.spec.deleteMany({ where: { trimId: { in: trimIds } } });
+        await tx.model3d.deleteMany({ where: { trimId: { in: trimIds } } });
+        await tx.trim.deleteMany({ where: { id: { in: trimIds } } });
+      }
+
+      return tx.model.delete({ where: { id } });
+    });
   }
 }

@@ -8,6 +8,77 @@ import { QueryMyQuoteDto } from './dto/query-my-quote.dto';
 
 // ─── Projection helpers ────────────────────────────────────────────────────────
 
+/** Public quote — all vehicle data, no sensitive client fields (email/phone) */
+export const QUOTE_PUBLIC_SELECT = {
+  id: true,
+  referenceCode: true,
+  status: true,
+  name: true,
+  city: true,
+  color: true,
+  budgetRange: true,
+  paymentMethod: true,
+  preferredChannel: true,
+  message: true,
+  createdAt: true,
+  assignedTo: { select: { id: true, name: true } },
+  model: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      year: true,
+      type: true,
+      description: true,
+      brand: { select: { name: true, logoUrl: true } },
+      trims: {
+        where: { active: true },
+        select: {
+          images: {
+            select: { url: true, sortOrder: true, type: true },
+            orderBy: { sortOrder: 'asc' as const },
+            take: 1,
+          },
+        },
+        take: 1,
+      },
+    },
+  },
+  trim: {
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      images: {
+        select: { url: true, sortOrder: true },
+        orderBy: { sortOrder: 'asc' as const },
+        take: 3,
+      },
+      spec: {
+        select: {
+          batteryKwh: true,
+          rangeCltcKm: true,
+          rangeWltpKm: true,
+          horsepower: true,
+          torque: true,
+          zeroTo100: true,
+          topSpeed: true,
+          chargeTime3080: true,
+          trunkLiters: true,
+          lengthMm: true,
+          widthMm: true,
+          heightMm: true,
+          wheelbaseMm: true,
+          curbWeightKg: true,
+          adasLevel: true,
+          screenSize: true,
+          kwhPer100km: true,
+        },
+      },
+    },
+  },
+} satisfies Prisma.QuoteSelect;
+
 /** Admin list — lightweight, no message/notes body text */
 export const QUOTE_LIST_SELECT = {
   id: true,
@@ -325,6 +396,17 @@ export class QuotesRepository {
   }
 
   // ─── Tracking Linkage ──────────────────────────────────────────────────────
+
+  /**
+   * findByReferenceCodePublic — Fetches a quote by its public reference code (COT-YYYY-NNNNN).
+   * Returns full vehicle/trim/spec data but omits sensitive client fields (email, phone).
+   */
+  async findByReferenceCodePublic(referenceCode: string) {
+    return this.prisma.quote.findUnique({
+      where: { referenceCode },
+      select: QUOTE_PUBLIC_SELECT,
+    });
+  }
 
   /**
    * findByTrackingCodeAndEmail — Validates that a quote exists for a specific
