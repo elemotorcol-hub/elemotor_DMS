@@ -91,6 +91,16 @@ export class TrimsRepository {
     });
   }
 
+  /** Verifica si el trim tiene pedidos u órdenes vinculadas */
+  async hasLinkedRecords(id: number): Promise<boolean> {
+    const counts = await this.prisma.trim.findUnique({
+      where: { id },
+      select: { _count: { select: { orders: true, quotes: true } } },
+    });
+    if (!counts) return false;
+    return counts._count.orders > 0 || counts._count.quotes > 0;
+  }
+
   async hardDelete(id: number) {
     return this.prisma.$transaction(async (tx) => {
       await tx.image.deleteMany({ where: { trimId: id } });

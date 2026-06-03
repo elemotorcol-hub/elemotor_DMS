@@ -98,21 +98,21 @@ export class TrimsService {
     return this.trimsRepository.softDelete(id);
   }
 
+  /**
+   * hardRemove — intenta eliminación física.
+   * Si el trim tiene pedidos u órdenes vinculadas, hace fallback a soft-delete
+   * para preservar la integridad del historial y devuelve un flag informativo.
+   */
   async hardRemove(id: number) {
     await this.assertTrimExists(id);
-    try {
-      return await this.trimsRepository.hardDelete(id);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2003'
-      ) {
-        throw new BadRequestException(
-          `No se puede eliminar la versión #${id} porque tiene órdenes o cotizaciones vinculadas. Desactívala en su lugar.`,
-        );
-      }
-      throw error;
+
+    const hasLinked = await this.trimsRepository.hasLinkedRecords(id);
+    if (hasLinked) {
+      await this.trimsRepository.softDelete(id);
+      return { deleted: false, deactivated: true, id };
     }
+
+    return this.trimsRepository.hardDelete(id);
   }
 
   private async assertTrimExists(id: number): Promise<void> {
