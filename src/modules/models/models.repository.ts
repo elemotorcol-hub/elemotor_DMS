@@ -445,11 +445,24 @@ export class ModelsRepository {
     });
   }
 
+  /** Retorna true si algún trim del modelo tiene órdenes o cotizaciones vinculadas */
+  async hasTrimsWithLinkedRecords(id: number): Promise<boolean> {
+    const count = await this.prisma.trim.count({
+      where: {
+        modelId: id,
+        OR: [
+          { orders: { some: {} } },
+          { quotes: { some: {} } },
+        ],
+      },
+    });
+    return count > 0;
+  }
+
   /**
    * hardDelete — Eliminación física irreversible.
    * Elimina todas las relaciones hijo de cada trim (imágenes, colores, spec, modelo3d)
    * antes de eliminar los trims y el modelo.
-   * Lanza error si algún trim tiene órdenes o cotizaciones vinculadas.
    */
   async hardDelete(id: number) {
     return this.prisma.$transaction(async (tx) => {

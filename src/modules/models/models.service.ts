@@ -107,25 +107,24 @@ export class ModelsService {
     return this.modelsRepository.softDeleteWithTrims(id);
   }
 
-  /** Hard delete — eliminación física irreversible. Cascada manual a trims y sus relaciones. */
+  /**
+   * Hard delete — intenta eliminación física.
+   * Si alguna versión tiene pedidos/cotizaciones vinculadas, hace fallback a soft-delete
+   * para no romper la integridad del historial.
+   */
   async hardRemove(id: number) {
     const model = await this.modelsRepository.findByIdAdmin(id);
     if (!model) {
       throw new NotFoundException(`Model #${id} not found`);
     }
-    try {
-      return await this.modelsRepository.hardDelete(id);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2003'
-      ) {
-        throw new ConflictException(
-          `No se puede eliminar el modelo #${id} porque algunas de sus versiones tienen órdenes o cotizaciones vinculadas. Desactívalo en su lugar.`,
-        );
-      }
-      throw error;
+
+    const hasLinked = await this.modelsRepository.hasTrimsWithLinkedRecords(id);
+    if (hasLinked) {
+      await this.modelsRepository.softDeleteWithTrims(id);
+      return { deleted: false, deactivated: true, id };
     }
+
+    return this.modelsRepository.hardDelete(id);
   }
 
   /** Assert that a brand exists; throws BadRequestException otherwise. */
