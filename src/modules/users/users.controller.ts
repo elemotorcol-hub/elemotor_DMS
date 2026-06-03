@@ -184,7 +184,7 @@ export class UsersController {
    * Solo para super_admin. Protege al último super_admin del sistema.
    */
   @Put(':id/role')
-  @Roles(UserRole.super_admin)
+  @Roles(UserRole.admin, UserRole.super_admin)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '[Super Admin] Cambiar rol de un usuario' })
   @ApiParam({ name: 'id', type: Number, description: 'ID del usuario' })
