@@ -21,7 +21,8 @@ export const QUOTE_PUBLIC_SELECT = {
   preferredChannel: true,
   message: true,
   createdAt: true,
-  assignedTo: { select: { id: true, name: true } },
+  user: { select: { cedula: true } },
+  assignedTo: { select: { id: true, name: true, phone: true, email: true } },
   model: {
     select: {
       id: true,
@@ -35,9 +36,25 @@ export const QUOTE_PUBLIC_SELECT = {
         where: { active: true },
         select: {
           images: {
-            select: { url: true, sortOrder: true, type: true },
+            select: { url: true, sortOrder: true },
             orderBy: { sortOrder: 'asc' as const },
-            take: 1,
+            take: 6,
+          },
+          spec: {
+            select: {
+              batteryKwh: true,
+              rangeCltcKm: true,
+              rangeWltpKm: true,
+              horsepower: true,
+              torque: true,
+              zeroTo100: true,
+              topSpeed: true,
+              chargeTime3080: true,
+              trunkLiters: true,
+              adasLevel: true,
+              screenSize: true,
+              kwhPer100km: true,
+            },
           },
         },
         take: 1,
@@ -52,7 +69,7 @@ export const QUOTE_PUBLIC_SELECT = {
       images: {
         select: { url: true, sortOrder: true },
         orderBy: { sortOrder: 'asc' as const },
-        take: 3,
+        take: 6,
       },
       spec: {
         select: {
