@@ -49,6 +49,7 @@ import { CalculatorSettingsModule } from './modules/calculator-settings/calculat
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { BlogModule } from './modules/blog/blog.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -107,6 +108,9 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 
     // Citas de mantenimiento (público, sin auth)
     AppointmentsModule,
+
+    // Correo — Gmail SMTP centralizado (exporta MailService)
+    MailModule,
   ],
   providers: [
     // Guards globales: JwtAuthGuard + RolesGuard aplicados a TODOS los endpoints

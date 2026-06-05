@@ -3,6 +3,7 @@ import { QuotesRepository } from './quotes.repository';
 import { QuotesWebhookService } from './webhook/quotes-webhook.service';
 import { UsersRepository } from '../users/users.repository';
 import { OrdersRepository } from '../orders/orders.repository';
+import { MailService } from '../mail/mail.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { QueryQuoteDto } from './dto/query-quote.dto';
@@ -23,6 +24,7 @@ export class QuotesService {
     private readonly webhookService: QuotesWebhookService,
     private readonly usersRepository: UsersRepository,
     private readonly ordersRepository: OrdersRepository,
+    private readonly mailService: MailService,
   ) {}
 
   // ─── Public: Create quote ─────────────────────────────────────────────────
@@ -66,7 +68,23 @@ export class QuotesService {
     // 3. Persist the quote
     const quote = await this.quotesRepository.create(dto, referenceCode, userId);
 
-    // 4. Webhook fire-and-forget: does not block the HTTP response
+    // 4. Email notification fire-and-forget
+    this.mailService.sendQuoteNotification({
+      referenceCode: quote.referenceCode ?? referenceCode,
+      name: quote.name,
+      email: quote.email,
+      phone: quote.phone ?? '',
+      city: quote.city,
+      modelName: quote.model?.name ?? null,
+      trimName: quote.trim?.name ?? null,
+      preferredChannel: quote.preferredChannel,
+      source: quote.source,
+    }).catch((err) => {
+      // Non-blocking: log but don't fail the request
+      console.error('Error enviando notificación de cotización por email:', err);
+    });
+
+    // 5. Webhook fire-and-forget: does not block the HTTP response
     this.webhookService.fire({
       quoteId: quote.id,
       referenceCode: quote.referenceCode,
