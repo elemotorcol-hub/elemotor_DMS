@@ -31,6 +31,7 @@ export const QUOTE_PUBLIC_SELECT = {
       year: true,
       type: true,
       description: true,
+      videoUrl: true,
       brand: { select: { name: true, logoUrl: true } },
       trims: {
         where: { active: true },
@@ -66,6 +67,10 @@ export const QUOTE_PUBLIC_SELECT = {
       id: true,
       name: true,
       status: true,
+      colors: {
+        select: { name: true, hexCode: true, type: true, swatchUrl: true },
+        orderBy: { name: 'asc' as const },
+      },
       images: {
         select: { url: true, sortOrder: true },
         orderBy: { sortOrder: 'asc' as const },
