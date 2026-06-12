@@ -36,10 +36,13 @@ export const QUOTE_PUBLIC_SELECT = {
       trims: {
         where: { active: true },
         select: {
+          colors: {
+            select: { name: true, hexCode: true, type: true, swatchUrl: true },
+            orderBy: { name: 'asc' as const },
+          },
           images: {
-            select: { url: true, sortOrder: true },
+            select: { url: true, sortOrder: true, type: true },
             orderBy: { sortOrder: 'asc' as const },
-            take: 6,
           },
           spec: {
             select: {
@@ -72,9 +75,8 @@ export const QUOTE_PUBLIC_SELECT = {
         orderBy: { name: 'asc' as const },
       },
       images: {
-        select: { url: true, sortOrder: true },
+        select: { url: true, sortOrder: true, type: true },
         orderBy: { sortOrder: 'asc' as const },
-        take: 6,
       },
       spec: {
         select: {
@@ -152,10 +154,17 @@ export const QUOTE_MY_LIST_SELECT = {
   id: true,
   referenceCode: true,
   status: true,
-  budgetRange: true,
+  name: true,
+  email: true,
+  phone: true,
   city: true,
-  message: true,
+  country: true,
+  color: true,
+  budgetRange: true,
+  paymentMethod: true,
   preferredChannel: true,
+  trackingCode: true,
+  message: true,
   createdAt: true,
   model: {
     select: {
@@ -167,6 +176,9 @@ export const QUOTE_MY_LIST_SELECT = {
   },
   trim: {
     select: { id: true, name: true, images: true }
+  },
+  assignedTo: {
+    select: { id: true, name: true, phone: true, email: true }
   },
 } satisfies Prisma.QuoteSelect;
 
