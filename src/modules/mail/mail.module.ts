@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MailService } from './mail.service';
+import { MailController } from './mail.controller';
 
 /**
  * MailModule — Módulo centralizado de envío de correos.
@@ -23,6 +24,7 @@ import { MailService } from './mail.service';
  *   MAIL_FROM   — Nombre y dirección del remitente (ej. "EleMotor <notificaciones@gmail.com>")
  */
 @Module({
+  controllers: [MailController],
   providers: [MailService],
   exports: [MailService],
 })

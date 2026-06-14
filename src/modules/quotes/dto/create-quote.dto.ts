@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { PreferredChannel } from '@prisma/client';
+import { ModelSegment, PreferredChannel } from '@prisma/client';
 
 /**
  * CreateQuoteDto — DTO for public POST /api/quotes.
@@ -154,4 +154,15 @@ export class CreateQuoteDto {
   @IsString()
   @MaxLength(100)
   source?: string;
+
+  // ─── Segment ─────────────────────────────────────────────────────────────────
+
+  @ApiPropertyOptional({
+    enum: ModelSegment,
+    example: ModelSegment.particular,
+    description: 'Segmento de la cotización (particular o corporativo)',
+  })
+  @IsOptional()
+  @IsEnum(ModelSegment)
+  segment?: ModelSegment;
 }

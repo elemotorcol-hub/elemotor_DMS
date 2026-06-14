@@ -11,6 +11,7 @@ export const MODEL_LIST_SELECT = {
   name: true,
   slug: true,
   type: true,
+  segment: true,
   year: true,
   basePrice: true,
   featured: true,
@@ -101,6 +102,10 @@ export class ModelsRepository {
 
     if (filters.type) {
       where.type = filters.type;
+    }
+
+    if (filters.segment) {
+      where.segment = filters.segment;
     }
 
     if (filters.active !== undefined) {

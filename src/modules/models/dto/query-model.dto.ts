@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { ModelType } from '@prisma/client';
+import { ModelSegment, ModelType } from '@prisma/client';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
 
 export const MODEL_SORT_FIELDS = [
@@ -71,6 +71,16 @@ export class QueryModelDto extends PaginationDto {
   @IsOptional()
   @IsEnum(ModelType)
   type?: ModelType;
+
+  /** Filtrar por segmento */
+  @ApiPropertyOptional({
+    description: 'Filtrar por segmento (particular o corporativo)',
+    enum: ModelSegment,
+    example: ModelSegment.particular,
+  })
+  @IsOptional()
+  @IsEnum(ModelSegment)
+  segment?: ModelSegment;
 
   /** Filtrar modelos activos/inactivos */
   @ApiPropertyOptional({

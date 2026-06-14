@@ -3,7 +3,7 @@ import { QuotesRepository } from '../quotes/quotes.repository';
 import { OrdersRepository } from '../orders/orders.repository';
 import { TrimsRepository } from '../trims/trims.repository';
 import { PrismaService } from '../../prisma/prisma.service';
-import { OrderStatus, QuoteStatus } from '@prisma/client';
+import { OrderStatus, QuoteStatus, UserRole } from '@prisma/client';
 
 @Injectable()
 export class DashboardService {
@@ -32,6 +32,9 @@ export class DashboardService {
       recentQuotes,
       recentActivity,
       chartData,
+      totalAsesores,
+      totalClients,
+      totalUsers,
     ] = await Promise.all([
       // 1. Leads Today
       this.prisma.quote.count({ where: { createdAt: { gte: today } } }),
@@ -40,8 +43,8 @@ export class DashboardService {
       this.prisma.quote.count({ where: { createdAt: { gte: startOfWeek } } }),
 
       // 3. Active Orders (Not delivered)
-      this.prisma.order.count({ 
-        where: { status: { not: OrderStatus.delivered } } 
+      this.prisma.order.count({
+        where: { status: { not: OrderStatus.delivered } }
       }),
 
       // 4. Vehicles in Stock (Sum availableQuantity of stock trims)
@@ -58,6 +61,19 @@ export class DashboardService {
 
       // 7. Chart Data (Last 30 days daily counts)
       this.getChartData(last30Days),
+
+      // 8. Total asesores (admin + super_admin)
+      this.prisma.user.count({
+        where: { role: { in: [UserRole.admin, UserRole.super_admin] } },
+      }),
+
+      // 9. Clientes con vehículo entregado (usuarios con al menos un pedido entregado)
+      this.prisma.user.count({
+        where: { orders: { some: { status: OrderStatus.delivered } } },
+      }),
+
+      // 10. Total usuarios registrados
+      this.prisma.user.count(),
     ]);
 
     return {
@@ -66,6 +82,9 @@ export class DashboardService {
         leadsWeekly,
         activeOrders,
         vehiclesInStock: totalStock._sum.availableQuantity || 0,
+        totalAsesores,
+        totalClients,
+        totalUsers,
       },
       recentQuotes: (recentQuotes as any).data || recentQuotes, // findMany returns PaginatedResult or Array depending on branch
       recentActivity,

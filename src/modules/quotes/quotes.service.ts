@@ -79,6 +79,7 @@ export class QuotesService {
       trimName: quote.trim?.name ?? null,
       preferredChannel: quote.preferredChannel,
       source: quote.source,
+      assignedToEmail: quote.assignedTo?.email ?? null,
     }).catch((err) => {
       // Non-blocking: log but don't fail the request
       console.error('Error enviando notificación de cotización por email:', err);

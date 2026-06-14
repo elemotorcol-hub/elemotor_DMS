@@ -50,6 +50,9 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { BlogModule } from './modules/blog/blog.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { MailModule } from './modules/mail/mail.module';
+import { SupportTicketsModule } from './modules/support-tickets/support-tickets.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { TestimonialsModule } from './modules/testimonials/testimonials.module';
 
 @Module({
   imports: [
@@ -111,6 +114,15 @@ import { MailModule } from './modules/mail/mail.module';
 
     // Correo — Gmail SMTP centralizado (exporta MailService)
     MailModule,
+
+    // Soporte — Tickets de soporte y mensajes
+    SupportTicketsModule,
+
+    // Notificaciones internas de usuario
+    NotificationsModule,
+
+    // Testimonios de clientes
+    TestimonialsModule,
   ],
   providers: [
     // Guards globales: JwtAuthGuard + RolesGuard aplicados a TODOS los endpoints

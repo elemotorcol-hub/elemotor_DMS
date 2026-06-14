@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Body,
   Param,
   Query,
@@ -105,6 +106,23 @@ export class OrdersController {
   @ApiResponse({ status: 403, description: 'Sin permisos de administrador' })
   findAll(@Query() query: QueryOrderDto) {
     return this.ordersService.findAll(query);
+  }
+
+  /**
+   * PATCH /api/orders/:id/link-user
+   * Vincula un pedido a un usuario registrado por email.
+   */
+  @Patch(':id/link-user')
+  @Roles(UserRole.admin, UserRole.super_admin)
+  @ApiOperation({ summary: '[Admin] Vincular pedido a usuario por email' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Pedido vinculado al usuario' })
+  @ApiResponse({ status: 404, description: 'Pedido u usuario no encontrado' })
+  linkUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { email: string },
+  ) {
+    return this.ordersService.linkUser(id, body.email);
   }
 
   /**

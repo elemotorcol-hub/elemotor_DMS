@@ -41,6 +41,28 @@ export class DocumentsService {
     return this.documentsRepository.findByUserId(userId);
   }
 
+  /**
+   * findOrderDocuments — Retorna todos los documentos de un pedido.
+   * Verifica que el solicitante sea el propietario del pedido o un admin/super_admin.
+   */
+  async findOrderDocuments(orderId: number, userId: number, userRole: string) {
+    const isAdmin = userRole === UserRole.admin || userRole === UserRole.super_admin;
+
+    if (!isAdmin) {
+      // Busca el pedido solo por ID para manejar pedidos con userId = null (creados por admin)
+      const order = await this.documentsRepository.findOrderById(orderId);
+      if (!order) {
+        throw new NotFoundException(`Pedido #${orderId} no encontrado`);
+      }
+      // Permite acceso si el pedido pertenece al usuario o si no tiene usuario asignado
+      if (order.userId !== null && order.userId !== userId) {
+        throw new ForbiddenException('Sin acceso a este pedido');
+      }
+    }
+
+    return this.documentsRepository.findByOrderId(orderId);
+  }
+
   // ─── Subir documento ──────────────────────────────────────────────────────
 
   /**
@@ -87,6 +109,37 @@ export class DocumentsService {
     return document;
   }
 
+  // ─── Eliminar documento ───────────────────────────────────────────────────
+
+  /**
+   * deleteDocument — Solo admins. Elimina el archivo de Cloudinary y el registro de BD.
+   */
+  async deleteDocument(docId: number, userRole: string): Promise<{ message: string }> {
+    const isAdmin = userRole === UserRole.admin || userRole === UserRole.super_admin;
+    if (!isAdmin) {
+      throw new ForbiddenException('Solo administradores pueden eliminar documentos');
+    }
+
+    const doc = await this.documentsRepository.findByIdForAdmin(docId);
+    if (!doc) {
+      throw new NotFoundException(`Documento #${docId} no encontrado`);
+    }
+
+    // Intentar eliminar de Cloudinary si tiene publicId
+    if (doc.publicId) {
+      try {
+        const resourceType = doc.fileUrl.includes('/image/upload/') ? 'image' : 'raw';
+        await this.cloudinary.uploader.destroy(doc.publicId, { resource_type: resourceType });
+      } catch (err) {
+        this.logger.warn(`No se pudo eliminar de Cloudinary el documento #${docId}: ${(err as Error).message}`);
+      }
+    }
+
+    await this.documentsRepository.deleteById(docId);
+    this.logger.log(`Document #${docId} deleted by admin`);
+    return { message: `Documento #${docId} eliminado correctamente` };
+  }
+
   // ─── URLs de previsualización y descarga ──────────────────────────────────
 
   /**
@@ -103,13 +156,23 @@ export class DocumentsService {
   ): Promise<{ previewUrl: string; downloadUrl: string; documentName: string; expiresAt: string | null }> {
     const isAdmin = userRole === UserRole.admin || userRole === UserRole.super_admin;
 
-    const document = isAdmin
-      ? await this.documentsRepository.findByIdForAdmin(docId)
-      : await this.documentsRepository.findByIdAndUserId(docId, userId);
-
-    if (!document) {
+    // Admin: accede a cualquier documento
+    // Cliente: puede descargar documentos de sus propios pedidos (incluso los subidos por el asesor)
+    const docWithOrder = await this.documentsRepository.findByIdWithOrder(docId);
+    if (!docWithOrder) {
       throw new NotFoundException(`Documento #${docId} no encontrado`);
     }
+
+    if (!isAdmin) {
+      const orderUserId = docWithOrder.order?.userId ?? null;
+      // Permite acceso si el pedido pertenece al usuario o si el pedido no tiene usuario asignado
+      if (orderUserId !== null && orderUserId !== userId) {
+        throw new ForbiddenException(`Sin acceso al documento #${docId}`);
+      }
+    }
+
+    // Extraer solo los campos del documento (sin la relación order)
+    const { order: _order, ...document } = docWithOrder;
 
     // La previewUrl siempre es la URL pública almacenada (sin flags de descarga)
     const previewUrl = document.fileUrl;

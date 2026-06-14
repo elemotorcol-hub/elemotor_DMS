@@ -19,7 +19,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { ModelType, UserRole } from '@prisma/client';
+import { ModelSegment, ModelType, UserRole } from '@prisma/client';
 import { ModelsService } from './models.service';
 import { CreateModelDto } from './dto/create-model.dto';
 import { UpdateModelDto } from './dto/update-model.dto';
@@ -56,6 +56,7 @@ export class ModelsController {
   @ApiQuery({ name: 'name', required: false })
   @ApiQuery({ name: 'year', required: false, type: Number })
   @ApiQuery({ name: 'type', required: false, enum: ModelType })
+  @ApiQuery({ name: 'segment', required: false, enum: ModelSegment })
   @ApiQuery({ name: 'active', required: false, type: Boolean })
   @ApiQuery({ name: 'featured', required: false, type: Boolean })
   @ApiQuery({ name: 'sortBy', required: false, enum: ['name', 'year', 'basePrice', 'createdAt'] })

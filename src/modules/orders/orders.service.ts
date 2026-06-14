@@ -123,6 +123,16 @@ export class OrdersService {
     return updated;
   }
 
+  // ─── Admin: Vincular pedido a usuario ────────────────────────────────────
+
+  async linkUser(orderId: number, email: string) {
+    const user = await this.ordersRepository.linkUserByEmail(orderId, email);
+    if (!user) {
+      throw new NotFoundException(`No se encontró ningún usuario con email "${email}"`);
+    }
+    return { message: `Pedido vinculado a ${user.name} (${user.email})`, userId: user.id };
+  }
+
   // ─── Cliente: Mis pedidos ─────────────────────────────────────────────────
 
   async findMyOrders(userId: number, query: QueryMyOrderDto): Promise<PaginatedResult<unknown>> {

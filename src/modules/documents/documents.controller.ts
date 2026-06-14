@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   ParseIntPipe,
   Req,
@@ -25,6 +26,8 @@ import {
 
 import { DocumentsService } from './documents.service';
 import { UploadDocumentDto } from './dto/upload-document.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
 import { ITokenPayload } from '../auth/interfaces/token-payload.interface';
 
 interface AuthRequest {
@@ -73,6 +76,25 @@ export class DocumentsController {
   @ApiResponse({ status: 401, description: 'No autenticado' })
   findMyDocuments(@Req() req: AuthRequest) {
     return this.documentsService.findMyDocuments(req.user.sub);
+  }
+
+  /**
+   * GET /api/documents/order/:orderId
+   * Retorna todos los documentos de un pedido.
+   * El cliente solo puede ver documentos de sus propios pedidos.
+   * Admins/super_admin pueden ver documentos de cualquier pedido.
+   */
+  @Get('order/:orderId')
+  @ApiOperation({ summary: 'Listar documentos de un pedido' })
+  @ApiParam({ name: 'orderId', type: Number, description: 'ID del pedido' })
+  @ApiResponse({ status: 200, description: 'Lista de documentos del pedido' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 404, description: 'Pedido no encontrado o sin acceso' })
+  findOrderDocuments(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @Req() req: AuthRequest,
+  ) {
+    return this.documentsService.findOrderDocuments(orderId, req.user.sub, req.user.role);
   }
 
   /**
@@ -153,5 +175,21 @@ export class DocumentsController {
   @ApiResponse({ status: 404, description: 'Documento no encontrado o sin acceso' })
   getDocumentUrls(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.documentsService.getDocumentUrls(id, req.user.sub, req.user.role);
+  }
+
+  /**
+   * DELETE /api/documents/:id
+   * Elimina un documento (Cloudinary + BD). Solo admins.
+   */
+  @Delete(':id')
+  @Roles(UserRole.admin, UserRole.super_admin)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[Admin] Eliminar documento' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Documento eliminado' })
+  @ApiResponse({ status: 403, description: 'Sin permisos' })
+  @ApiResponse({ status: 404, description: 'Documento no encontrado' })
+  deleteDocument(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
+    return this.documentsService.deleteDocument(id, req.user.role);
   }
 }

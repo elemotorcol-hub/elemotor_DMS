@@ -13,10 +13,15 @@ export class DocumentsRepository {
 
   // ─── Listado ──────────────────────────────────────────────────────────────
 
-  /** Lista todos los documentos de un usuario */
+  /** Lista todos los documentos de un usuario (propios + de órdenes vinculadas) */
   findByUserId(userId: number): Promise<Document[]> {
     return this.prisma.document.findMany({
-      where: { userId },
+      where: {
+        OR: [
+          { userId },                  // docs subidos por el propio usuario
+          { order: { userId } },       // docs de órdenes que le pertenecen al usuario
+        ],
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -37,6 +42,16 @@ export class DocumentsRepository {
     });
   }
 
+  // ─── Listado por pedido ───────────────────────────────────────────────────
+
+  /** Lista todos los documentos de un pedido */
+  findByOrderId(orderId: number): Promise<Document[]> {
+    return this.prisma.document.findMany({
+      where: { orderId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
   // ─── Verificar ownership de pedido ───────────────────────────────────────
 
   /** Verifica que el pedido existe y pertenece al usuario */
@@ -47,11 +62,34 @@ export class DocumentsRepository {
     });
   }
 
+  /** Busca un pedido solo por ID (para verificación de ownership flexible) */
+  findOrderById(orderId: number) {
+    return this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, userId: true },
+    });
+  }
+
+  /** Busca un documento por ID incluyendo el userId del pedido para verificar ownership en el servicio */
+  findByIdWithOrder(docId: number) {
+    return this.prisma.document.findUnique({
+      where: { id: docId },
+      include: { order: { select: { userId: true } } },
+    });
+  }
+
   // ─── Creación ─────────────────────────────────────────────────────────────
 
   /** Crea un nuevo documento en la base de datos */
   create(data: Prisma.DocumentCreateInput): Promise<Document> {
     return this.prisma.document.create({ data });
+  }
+
+  // ─── Eliminación ──────────────────────────────────────────────────────────
+
+  /** Elimina un documento por ID */
+  deleteById(id: number): Promise<Document> {
+    return this.prisma.document.delete({ where: { id } });
   }
 
   // ─── Para limpiar uploadedBy (resolución del valor) ──────────────────────

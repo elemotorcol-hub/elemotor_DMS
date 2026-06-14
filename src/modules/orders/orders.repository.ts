@@ -353,6 +353,22 @@ export class OrdersRepository {
     return { data, total };
   }
 
+  /** linkUser — Vincula un pedido a un usuario buscando por email. */
+  async linkUserByEmail(orderId: number, email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, name: true, email: true },
+    });
+    if (!user) return null;
+
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: { userId: user.id },
+    });
+
+    return user;
+  }
+
   /** findByIdAndUserId — Detalle propio con historial completo (ownership check en DB). */
   async findByIdAndUserId(id: number, userId: number) {
     return this.prisma.order.findFirst({

@@ -11,7 +11,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ModelType } from '@prisma/client';
+import { ModelSegment, ModelType } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { NestedTrimDto } from './nested-model.dto';
 import { ValidateNested } from 'class-validator';
@@ -39,6 +39,16 @@ export class CreateModelDto {
   })
   @IsEnum(ModelType)
   type: ModelType;
+
+  @ApiPropertyOptional({
+    enum: ModelSegment,
+    example: ModelSegment.particular,
+    description: 'Segmento del modelo (particular o corporativo)',
+    default: ModelSegment.particular,
+  })
+  @IsOptional()
+  @IsEnum(ModelSegment)
+  segment?: ModelSegment;
 
   @ApiProperty({ example: 2025, description: 'Año del modelo' })
   @IsInt()

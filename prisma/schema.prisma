@@ -28,6 +28,7 @@ model Model {
   name        String    @db.VarChar(255)
   slug        String    @unique @db.VarChar(255)
   type        ModelType
+  segment     ModelSegment  @default(particular)
   year        Int
   description String?   @db.Text
   basePrice   Decimal?  @map("base_price") @db.Decimal(15, 2)
@@ -169,6 +170,9 @@ model User {
   quotes               Quote[]               @relation("QuoteUser")
   maintenanceRecords   MaintenanceRecord[]
   posts                Post[]
+  supportTickets       SupportTicket[]       @relation("TicketUser")
+  supportMessages      SupportMessage[]
+  notifications        Notification[]
 
   @@map("users")
 }
@@ -257,6 +261,7 @@ model Quote {
   utmSource        String?          @map("utm_source") @db.VarChar(100)
   utmMedium        String?          @map("utm_medium") @db.VarChar(100)
   utmCampaign      String?          @map("utm_campaign") @db.VarChar(100)
+  segment          ModelSegment?
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
   assignedTo       User?            @relation("QuoteAssignedTo", fields: [assignedToId], references: [id])
@@ -423,6 +428,16 @@ enum ModelType {
   Sedan
   Hatchback
   Pickup
+  Truck
+  Bus
+  Minibus
+  Taxi
+  Van
+}
+
+enum ModelSegment {
+  particular
+  corporate
 }
 
 enum TrimStatus {
@@ -520,6 +535,75 @@ enum PostStatus {
   published
 }
 
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum TicketCategory {
+  technical
+  billing
+  delivery
+  general
+}
+
+enum NotificationType {
+  quote_submitted
+  quote_status_changed
+  order_status_changed
+  appointment_status_changed
+  ticket_replied
+  ticket_resolved
+  general
+}
+
+model SupportTicket {
+  id        Int            @id @default(autoincrement())
+  userId    Int            @map("user_id")
+  subject   String         @db.VarChar(255)
+  category  TicketCategory @default(general)
+  status    TicketStatus   @default(open)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+  user      User           @relation("TicketUser", fields: [userId], references: [id])
+  messages  SupportMessage[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id        Int           @id @default(autoincrement())
+  ticketId  Int           @map("ticket_id")
+  senderId  Int           @map("sender_id")
+  body      String        @db.Text
+  createdAt DateTime      @default(now()) @map("created_at")
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender    User          @relation(fields: [senderId], references: [id])
+
+  @@index([ticketId])
+  @@map("support_messages")
+}
+
+model Notification {
+  id         Int              @id @default(autoincrement())
+  userId     Int              @map("user_id")
+  type       NotificationType
+  title      String           @db.VarChar(255)
+  body       String           @db.VarChar(500)
+  entityId   Int?             @map("entity_id")
+  entityType String?          @map("entity_type") @db.VarChar(50)
+  read       Boolean          @default(false)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
 model Post {
   id            Int        @id @default(autoincrement())
   slug          String     @unique @db.VarChar(255)
@@ -537,4 +621,20 @@ model Post {
   @@index([status])
   @@index([authorId])
   @@map("posts")
+}
+
+model Testimonial {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  comment   String   @db.Text
+  rating    Int      @db.TinyInt
+  photoUrl  String?  @map("photo_url") @db.VarChar(500)
+  publicId  String?  @map("public_id") @db.VarChar(255)
+  orderId   Int?     @map("order_id")
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([rating])
+  @@index([approved])
+  @@map("testimonials")
 }

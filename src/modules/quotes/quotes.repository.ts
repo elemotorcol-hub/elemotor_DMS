@@ -165,6 +165,8 @@ export const QUOTE_MY_LIST_SELECT = {
   preferredChannel: true,
   trackingCode: true,
   message: true,
+  modelInterest: true,
+  segment: true,
   createdAt: true,
   model: {
     select: {

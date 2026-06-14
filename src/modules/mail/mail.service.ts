@@ -59,12 +59,21 @@ export class MailService {
     preferredChannel?: string | null;
     source?: string | null;
     notes?: string | null;
+    assignedToEmail?: string | null;
   }): Promise<void> {
-    const notifyTo = this.config.get<string>('mail.appointmentsTo');
-    if (!notifyTo) {
-      this.logger.warn('APPOINTMENTS_NOTIFY_EMAIL no configurado — notificación de cotización omitida');
+    const generalTo = this.config.get<string>('mail.appointmentsTo');
+
+    // Construir lista de destinatarios: asesor asignado + equipo general (sin duplicados)
+    const recipients = [...new Set(
+      [quote.assignedToEmail, generalTo].filter((e): e is string => !!e),
+    )];
+
+    if (recipients.length === 0) {
+      this.logger.warn('Sin destinatarios configurados — notificación de cotización omitida');
       return;
     }
+
+    const notifyTo = recipients.join(', ');
 
     const row = (label: string, value: string, last = false) => `
       <tr>
@@ -236,6 +245,91 @@ Si tienes alguna pregunta, contáctanos.
     } catch (err) {
       this.logger.error(`Error enviando correo de bienvenida a ${user.email}`, err);
       throw err;
+    }
+  }
+
+  /**
+   * sendSupportTicketNotification — Notifica al equipo que se abrió un nuevo
+   * ticket de soporte desde el dashboard del cliente.
+   */
+  async sendSupportTicketNotification(ticket: {
+    id: number;
+    subject: string;
+    category: string;
+    message: string;
+    clientName: string;
+    clientEmail: string;
+  }): Promise<void> {
+    const to = this.config.get<string>('mail.appointmentsTo');
+    if (!to) {
+      this.logger.warn('MAIL_APPOINTMENTS_TO no configurado — notificación de ticket omitida');
+      return;
+    }
+
+    const categoryLabel: Record<string, string> = {
+      technical: 'Problema técnico',
+      billing: 'Facturación',
+      delivery: 'Entrega / Pedido',
+      general: 'Consulta general',
+    };
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><title>Nuevo ticket de soporte #${ticket.id}</title></head>
+<body style="margin:0;padding:0;background-color:#f0f0f0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f0f0;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+        <tr><td style="background-color:#0a2e22;padding:28px 32px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;color:#00d4aa;text-transform:uppercase;">EleMotor · Soporte</p>
+          <h1 style="margin:8px 0 4px;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;color:#fff;">Nuevo ticket de soporte</h1>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#7ab8a0;">Ticket #${ticket.id} &nbsp;·&nbsp; ${new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+        </td></tr>
+        <tr><td style="padding:24px 32px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-radius:6px;overflow:hidden;border:1px solid #e0e0e0;">
+            <tr>
+              <td style="padding:12px 16px;font-weight:bold;color:#444;background:#f7f7f7;border-bottom:1px solid #e0e0e0;width:38%;">Cliente</td>
+              <td style="padding:12px 16px;border-bottom:1px solid #e0e0e0;">${ticket.clientName}</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;font-weight:bold;color:#444;background:#f7f7f7;border-bottom:1px solid #e0e0e0;">Correo</td>
+              <td style="padding:12px 16px;border-bottom:1px solid #e0e0e0;"><a href="mailto:${ticket.clientEmail}" style="color:#0a7c5c;">${ticket.clientEmail}</a></td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;font-weight:bold;color:#444;background:#f7f7f7;border-bottom:1px solid #e0e0e0;">Asunto</td>
+              <td style="padding:12px 16px;border-bottom:1px solid #e0e0e0;">${ticket.subject}</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;font-weight:bold;color:#444;background:#f7f7f7;border-bottom:1px solid #e0e0e0;">Categoría</td>
+              <td style="padding:12px 16px;border-bottom:1px solid #e0e0e0;">${categoryLabel[ticket.category] ?? ticket.category}</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;font-weight:bold;color:#444;background:#f7f7f7;">Mensaje</td>
+              <td style="padding:12px 16px;white-space:pre-wrap;">${ticket.message}</td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="background-color:#f7f7f7;padding:16px 32px;border-top:1px solid #e0e0e0;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#999;text-align:center;">EleMotor DMS &mdash; Generado automáticamente.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+    try {
+      await this.transporter.sendMail({
+        from: this.from,
+        to,
+        replyTo: ticket.clientEmail,
+        subject: `Nuevo ticket #${ticket.id}: ${ticket.subject}`,
+        html,
+        text: `Nuevo ticket #${ticket.id}\nCliente: ${ticket.clientName} <${ticket.clientEmail}>\nAsunto: ${ticket.subject}\nCategoría: ${categoryLabel[ticket.category] ?? ticket.category}\n\n${ticket.message}`,
+      });
+      this.logger.log(`Notificación de ticket #${ticket.id} enviada`);
+    } catch (err) {
+      this.logger.error(`Error enviando notificación de ticket #${ticket.id}`, err);
     }
   }
 
