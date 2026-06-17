@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { NotificationType } from '@prisma/client';
 import { NotificationsRepository } from './notifications.repository';
 
 /**
@@ -38,5 +39,37 @@ export class NotificationsService {
    */
   async markAllRead(userId: number) {
     return this.notificationsRepository.markAllRead(userId);
+  }
+
+  /**
+   * notify — Crea una notificación para un usuario específico.
+   */
+  async notify(data: {
+    userId: number;
+    type: NotificationType;
+    title: string;
+    body: string;
+    entityId?: number;
+    entityType?: string;
+  }) {
+    return this.notificationsRepository.create(data);
+  }
+
+  /**
+   * notifyAdmins — Crea una notificación para todos los admins y super_admins.
+   */
+  async notifyAdmins(data: {
+    type: NotificationType;
+    title: string;
+    body: string;
+    entityId?: number;
+    entityType?: string;
+  }) {
+    const adminIds = await this.notificationsRepository.findAdminUserIds();
+    await Promise.all(
+      adminIds.map((userId) =>
+        this.notificationsRepository.create({ ...data, userId }),
+      ),
+    );
   }
 }

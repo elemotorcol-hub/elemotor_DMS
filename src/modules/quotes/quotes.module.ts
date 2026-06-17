@@ -6,6 +6,7 @@ import { QuotesWebhookService } from './webhook/quotes-webhook.service';
 import { UsersModule } from '../users/users.module';
 import { OrdersModule } from '../orders/orders.module';
 import { MailModule } from '../mail/mail.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 /**
  * QuotesModule — Gestión de cotizaciones y leads.
@@ -21,7 +22,7 @@ import { MailModule } from '../mail/mail.module';
  * PrismaModule and ConfigModule are global → no need to import them here.
  */
 @Module({
-  imports: [UsersModule, forwardRef(() => OrdersModule), MailModule],
+  imports: [UsersModule, forwardRef(() => OrdersModule), MailModule, NotificationsModule],
   controllers: [QuotesController],
   providers: [QuotesService, QuotesRepository, QuotesWebhookService],
   exports: [QuotesRepository],

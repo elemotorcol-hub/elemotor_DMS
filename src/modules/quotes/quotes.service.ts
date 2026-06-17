@@ -4,6 +4,7 @@ import { QuotesWebhookService } from './webhook/quotes-webhook.service';
 import { UsersRepository } from '../users/users.repository';
 import { OrdersRepository } from '../orders/orders.repository';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { QueryQuoteDto } from './dto/query-quote.dto';
@@ -25,6 +26,7 @@ export class QuotesService {
     private readonly usersRepository: UsersRepository,
     private readonly ordersRepository: OrdersRepository,
     private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // ─── Public: Create quote ─────────────────────────────────────────────────
@@ -103,6 +105,15 @@ export class QuotesService {
       timestamp: new Date().toISOString(),
     });
 
+    // 6. Notificación interna a admins fire-and-forget
+    this.notificationsService.notifyAdmins({
+      type: 'quote_submitted',
+      title: 'Nueva cotización recibida',
+      body: `${quote.name} solicitó una cotización (${quote.referenceCode ?? referenceCode})`,
+      entityId: quote.id,
+      entityType: 'quote',
+    }).catch(() => void 0);
+
     return quote;
   }
 
@@ -137,7 +148,18 @@ export class QuotesService {
 
     const updated = await this.quotesRepository.update(id, dto);
 
-    // If status changed to won/lost, we could trigger other side effects here
+    // Notificar al cliente si cambió el estado y tiene cuenta
+    if (dto.status && dto.status !== exists.status && updated.user?.id) {
+      this.notificationsService.notify({
+        userId: updated.user.id,
+        type: 'quote_status_changed',
+        title: 'Tu cotización fue actualizada',
+        body: `El estado de tu cotización ${updated.referenceCode} cambió a: ${dto.status}`,
+        entityId: updated.id,
+        entityType: 'quote',
+      }).catch(() => void 0);
+    }
+
     return updated;
   }
 

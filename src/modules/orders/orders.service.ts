@@ -3,6 +3,7 @@ import { OrdersRepository } from './orders.repository';
 import { OrdersWebhookService } from './webhook/orders-webhook.service';
 import { QuotesRepository } from '../quotes/quotes.repository';
 import { UploadService } from '../upload/upload.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -26,6 +27,7 @@ export class OrdersService {
     private readonly webhookService: OrdersWebhookService,
     private readonly quotesRepository: QuotesRepository,
     private readonly uploadService: UploadService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // ─── Admin: Crear pedido ───────────────────────────────────────────────────
@@ -121,6 +123,18 @@ export class OrdersService {
       changedById,
       timestamp: new Date().toISOString(),
     });
+
+    // Notificación interna al cliente si tiene cuenta vinculada
+    if (updated.user?.id) {
+      this.notificationsService.notify({
+        userId: updated.user.id,
+        type: 'order_status_changed',
+        title: 'Tu pedido fue actualizado',
+        body: `El estado de tu pedido ${updated.trackingCode} cambió a: ${dto.status}`,
+        entityId: id,
+        entityType: 'order',
+      }).catch(() => void 0);
+    }
 
     return updated;
   }
