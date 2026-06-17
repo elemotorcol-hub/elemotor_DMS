@@ -529,4 +529,45 @@ export class OrdersRepository {
       return order;
     });
   }
+
+  // ─── Delivery photo ────────────────────────────────────────────────────────
+
+  /** findPhotoData — Retorna solo los campos de foto de un pedido. */
+  async findPhotoData(orderId: number) {
+    return this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, deliveryPhotoUrl: true, deliveryPhotoPublicId: true },
+    });
+  }
+
+  /** updateDeliveryPhoto — Guarda la URL y publicId de la foto de entrega. */
+  async updateDeliveryPhoto(orderId: number, url: string, publicId: string) {
+    return this.prisma.order.update({
+      where: { id: orderId },
+      data: { deliveryPhotoUrl: url, deliveryPhotoPublicId: publicId },
+      select: { id: true, deliveryPhotoUrl: true },
+    });
+  }
+
+  /** clearDeliveryPhoto — Elimina los campos de foto y devuelve el publicId previo. */
+  async clearDeliveryPhoto(orderId: number): Promise<string | null> {
+    const row = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { deliveryPhotoPublicId: true },
+    });
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: { deliveryPhotoUrl: null, deliveryPhotoPublicId: null },
+    });
+    return row?.deliveryPhotoPublicId ?? null;
+  }
+
+  /** findDeliveryPhotos — Lista pública de pedidos con foto de entrega. */
+  async findDeliveryPhotos() {
+    return this.prisma.order.findMany({
+      where: { deliveryPhotoUrl: { not: null } },
+      select: { id: true, trackingCode: true, deliveryPhotoUrl: true, createdAt: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
 }

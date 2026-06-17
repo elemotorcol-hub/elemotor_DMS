@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Body,
   Param,
   Query,
@@ -176,6 +177,25 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
+  }
+
+  /**
+   * PATCH /api/users/:id
+   * Actualiza datos de perfil de cualquier usuario (name, phone, city).
+   * Solo para super_admin.
+   */
+  @Patch(':id')
+  @Roles(UserRole.super_admin)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[Super Admin] Editar datos de perfil de un usuario' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID del usuario' })
+  @ApiResponse({ status: 200, description: 'Perfil actualizado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  updateUserById(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(id, dto);
   }
 
   /**

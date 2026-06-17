@@ -4,6 +4,7 @@ import { OrdersService } from './orders.service';
 import { OrdersRepository } from './orders.repository';
 import { OrdersWebhookService } from './webhook/orders-webhook.service';
 import { QuotesModule } from '../quotes/quotes.module';
+import { UploadModule } from '../upload/upload.module';
 
 /**
  * OrdersModule — Gestión de pedidos de importación.
@@ -20,7 +21,7 @@ import { QuotesModule } from '../quotes/quotes.module';
  * ConfigModule es global → OrdersWebhookService puede inyectar ConfigService.
  */
 @Module({
-  imports: [forwardRef(() => QuotesModule)],
+  imports: [forwardRef(() => QuotesModule), UploadModule],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersRepository, OrdersWebhookService],
   exports: [OrdersRepository],

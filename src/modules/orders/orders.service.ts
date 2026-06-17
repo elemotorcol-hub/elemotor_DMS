@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, HttpException, HttpStatus, Logger } from
 import { OrdersRepository } from './orders.repository';
 import { OrdersWebhookService } from './webhook/orders-webhook.service';
 import { QuotesRepository } from '../quotes/quotes.repository';
+import { UploadService } from '../upload/upload.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -24,6 +25,7 @@ export class OrdersService {
     private readonly ordersRepository: OrdersRepository,
     private readonly webhookService: OrdersWebhookService,
     private readonly quotesRepository: QuotesRepository,
+    private readonly uploadService: UploadService,
   ) {}
 
   // ─── Admin: Crear pedido ───────────────────────────────────────────────────
@@ -207,5 +209,35 @@ export class OrdersService {
    */
   async getDeliveredOrder(userId: number) {
     return this.ordersRepository.findDeliveredOrder(userId);
+  }
+
+  // ─── Foto de entrega ──────────────────────────────────────────────────────
+
+  /** uploadDeliveryPhoto — Sube la foto de entrega de un pedido a Cloudinary y guarda la URL. */
+  async uploadDeliveryPhoto(orderId: number, file: Express.Multer.File) {
+    const existing = await this.ordersRepository.findPhotoData(orderId);
+    if (!existing) throw new NotFoundException(`Pedido #${orderId} no encontrado`);
+
+    // Eliminar foto anterior si existe
+    if (existing.deliveryPhotoPublicId) {
+      await this.uploadService.deleteFile(existing.deliveryPhotoPublicId, 'image');
+    }
+
+    const uploaded = await this.uploadService.uploadImage(file, 'elemotor/delivery-photos');
+    return this.ordersRepository.updateDeliveryPhoto(orderId, uploaded.publicUrl, uploaded.publicId);
+  }
+
+  /** removeDeliveryPhoto — Elimina la foto de entrega de Cloudinary y limpia la BD. */
+  async removeDeliveryPhoto(orderId: number) {
+    const publicId = await this.ordersRepository.clearDeliveryPhoto(orderId);
+    if (publicId) {
+      await this.uploadService.deleteFile(publicId, 'image');
+    }
+    return { success: true };
+  }
+
+  /** getDeliveryPhotos — Lista pública de fotos de entrega subidas. */
+  async getDeliveryPhotos() {
+    return this.ordersRepository.findDeliveryPhotos();
   }
 }

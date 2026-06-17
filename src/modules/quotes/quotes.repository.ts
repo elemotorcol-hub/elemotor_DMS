@@ -117,6 +117,7 @@ export const QUOTE_LIST_SELECT = {
   budgetRange: true,
   color: true,
   paymentMethod: true,
+  segment: true,
   trackingCode: true,
   source: true,
   preferredChannel: true,

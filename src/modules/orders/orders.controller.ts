@@ -4,6 +4,7 @@ import {
   Post,
   Put,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -11,7 +12,10 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -251,6 +255,57 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Pedido no encontrado o no pertenece al usuario' })
   findMyOrder(@Param('id', ParseIntPipe) id: number, @Req() req: AuthRequest) {
     return this.ordersService.findMyOrder(id, req.user.sub);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // FOTOS DE ENTREGA
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /api/orders/delivery-photos
+   * Lista pública de fotos de entrega subidas por el admin.
+   * Usada por la landing page para el carrusel dinámico.
+   */
+  @Get('delivery-photos')
+  @Public()
+  @ApiOperation({ summary: '[Público] Listar fotos de entrega' })
+  @ApiResponse({ status: 200, description: 'Array de fotos de entrega con URL' })
+  getDeliveryPhotos() {
+    return this.ordersService.getDeliveryPhotos();
+  }
+
+  /**
+   * POST /api/orders/:id/delivery-photo
+   * Sube la foto de entrega de un pedido (multipart/form-data, campo "file").
+   * Reemplaza la foto anterior si ya existía.
+   */
+  @Post(':id/delivery-photo')
+  @Roles(UserRole.admin, UserRole.super_admin)
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 8 * 1024 * 1024 } }))
+  @ApiOperation({ summary: '[Admin] Subir foto de entrega del pedido' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Foto subida y guardada' })
+  @ApiResponse({ status: 404, description: 'Pedido no encontrado' })
+  uploadDeliveryPhoto(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.ordersService.uploadDeliveryPhoto(id, file);
+  }
+
+  /**
+   * DELETE /api/orders/:id/delivery-photo
+   * Elimina la foto de entrega del pedido.
+   */
+  @Delete(':id/delivery-photo')
+  @Roles(UserRole.admin, UserRole.super_admin)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[Admin] Eliminar foto de entrega del pedido' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Foto eliminada' })
+  removeDeliveryPhoto(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.removeDeliveryPhoto(id);
   }
 
   // ──────────────────────────────────────────────────────────────────────────
